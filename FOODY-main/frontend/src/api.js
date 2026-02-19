@@ -184,22 +184,35 @@ export const orderAPI = {
     api.get("/api/order/get-assignments"),
 
   acceptOrder: (assignmentId) =>
-    api.post(`/api/order/accept-order/${assignmentId}`),
+    api.get(`/api/order/accept-order/${assignmentId}`),
 
   getCurrentOrders: () =>
-    api.get("/api/order/current-orders"),
+    api.get("/api/order/get-current-orders"),
 
   getTodayDeliveries: () =>
-    api.get("/api/order/today-deliveries"),
+    api.get("/api/order/get-today-deliveries"),
 
   getDeliveryCounts: () =>
     api.get("/api/order/delivery-counts"),
 
   getDeliveriesByDate: (year, month, day) => {
-    let url = `/api/order/deliveries-by-date/${year}/${month}`;
-    if (day) url += `/${day}`;
-    return api.get(url);
+    return api.get("/api/order/get-deliveries-by-date", {
+      params: day ? { year, month, day } : { year, month },
+    });
   },
+
+  sendDeliveryOtp: (orderId, shopOrderId) =>
+    api.post("/api/order/send-delivery-otp", {
+      orderId,
+      shopOrderId,
+    }),
+
+  verifyDeliveryOtp: (orderId, shopOrderId, otp) =>
+    api.post("/api/order/verify-delivery-otp", {
+      orderId,
+      shopOrderId,
+      otp,
+    }),
 
   updateStatus: (orderId, shopId, status) =>
     api.post(`/api/order/update-status/${orderId}/${shopId}`, {

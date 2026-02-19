@@ -24,9 +24,10 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5000;
 
+const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : true;
 
 app.use(cors({
-  origin: true,            // allow dynamic origins
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -39,7 +40,7 @@ app.use(cookieParser());
 
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: allowedOrigins,
     credentials: true
   }
 });

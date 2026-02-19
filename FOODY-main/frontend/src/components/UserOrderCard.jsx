@@ -11,7 +11,6 @@ function UserOrderCard({ data }) {
     const dispatch = useDispatch()
     const { myOrders } = useSelector(state => state.user)
     const [entityRatings, setEntityRatings] = useState({}) // keys: `${shopOrderId}-shop`, `${shopOrderId}-deliveryBoy`, `${itemId}-item`
-    const [isDeleting, setIsDeleting] = useState(false)
     const [isCancelling, setIsCancelling] = useState(false)
     const [isEditingInstructions, setIsEditingInstructions] = useState(false)
     const [specialInstructions, setSpecialInstructions] = useState(data.specialInstructions || '')
@@ -80,24 +79,6 @@ function UserOrderCard({ data }) {
             setEntityRatings(prev => ({ ...prev, [key]: stars }))
         } catch (error) {
             console.log('submit rating error', error?.response?.data || error)
-        }
-    }
-
-    const handleDeleteOrder = async () => {
-        if (!window.confirm('Hide this order from your dashboard?')) {
-            return
-        }
-        setIsDeleting(true)
-        try {
-            await orderAPI.deleteOrder(data._id)
-            const updatedOrders = myOrders.filter(order => order._id !== data._id)
-            dispatch(setMyOrders(updatedOrders))
-            alert('Order hidden from your dashboard')
-        } catch (error) {
-            console.error('Error deleting order:', error)
-            alert(error.response?.data?.message || 'Failed to delete order. Please try again.')
-        } finally {
-            setIsDeleting(false)
         }
     }
 

@@ -20,15 +20,7 @@ const dispatch=useDispatch()
   // Fetch orders data
   useGetMyOrders()
   
-  if (!userData) return null;
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('MyOrders - User data:', userData)
-    console.log('MyOrders - User role:', userData?.role)
-    console.log('MyOrders - Orders:', myOrders)
-    console.log('MyOrders - Orders length:', myOrders?.length)
-  }, [userData, myOrders])
+  // Socket events for owners and users
   useEffect(()=>{
     socket?.on('newOrder',(data)=>{
       if(data.shopOrders?.owner._id==userData?._id){

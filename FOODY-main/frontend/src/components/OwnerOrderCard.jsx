@@ -1,15 +1,11 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { MdPhone } from "react-icons/md";
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { updateOrderStatus, setMyOrders } from '../redux/userSlice';
 import { orderAPI, getImageUrl } from '../api';
-import { useState } from 'react';
-import { useEffect } from 'react';
 function OwnerOrderCard({ data }) {
     const [availableBoys,setAvailableBoys]=useState([])
-    const [isDeleting, setIsDeleting] = useState(false)
     const dispatch=useDispatch()
-    const { myOrders } = useSelector(state => state.user)
     
     // Remove noisy debug logs
     useEffect(() => {
@@ -28,24 +24,6 @@ function OwnerOrderCard({ data }) {
              }
         } catch {
             // Silently ignore to avoid console noise
-        }
-    }
-
-    const handleDeleteOrder = async () => {
-        if (!window.confirm('Hide this order from your dashboard?')) {
-            return
-        }
-        setIsDeleting(true)
-        try {
-            await orderAPI.deleteOrder(data._id)
-            const updatedOrders = myOrders.filter(order => order._id !== data._id)
-            dispatch(setMyOrders(updatedOrders))
-            alert('Order hidden from your dashboard')
-        } catch (error) {
-            console.error('Error deleting order:', error)
-            alert(error.response?.data?.message || 'Failed to delete order. Please try again.')
-        } finally {
-            setIsDeleting(false)
         }
     }
 

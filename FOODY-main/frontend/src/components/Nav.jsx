@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaLocationDot, FaPlus } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import { FiShoppingCart } from "react-icons/fi";
 import { TbReceipt2 } from "react-icons/tb";
 import { RxCross2 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
-import { setSearchItems, setUserData, logout, incrementNewOrdersCount, resetNewOrdersCount } from "../redux/userSlice";
+import { setSearchItems, logout, incrementNewOrdersCount, resetNewOrdersCount } from "../redux/userSlice";
 import { userAPI, authAPI, itemAPI } from "../api";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -28,7 +28,7 @@ function Nav() {
 
   useEffect(() => {
     if (userData?.role === 'owner' && socket) {
-      const handleNewOrder = (data) => {
+      const handleNewOrder = () => {
         // Only increment if not on the orders page
         if (location.pathname !== '/my-orders') {
           dispatch(incrementNewOrdersCount());
@@ -54,19 +54,22 @@ function Nav() {
     }
   };
 
-  const handleSearchItems = useCallback(async () => {
-    try {
-      const { data } = await itemAPI.searchItems(query, currentCity);
-      dispatch(setSearchItems(data));
-    } catch (error) {
-      console.log(error);
+  useEffect(() => {
+    const searchItems = async () => {
+      try {
+        const res = await itemAPI.searchItems(query, currentCity);
+        dispatch(setSearchItems(res.data));
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    if (query) {
+      searchItems();
+    } else {
+      dispatch(setSearchItems(null));
     }
   }, [query, currentCity, dispatch]);
-
-  useEffect(() => {
-    if (query) handleSearchItems();
-    else dispatch(setSearchItems(null));
-  }, [query, handleSearchItems, dispatch]);
 
   return (
     <div className="fixed top-0 left-0 w-full h-[70px] bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm z-[9999] flex items-center justify-between px-4 sm:px-8 transition-all">

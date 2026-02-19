@@ -2,13 +2,11 @@ import React, { useState } from 'react'
 import { MdPhone, MdLocationOn } from 'react-icons/md'
 import { ClipLoader } from 'react-spinners'
 import { orderAPI, getImageUrl } from '../api'
-import { useDispatch, useSelector } from 'react-redux'
-import { updateOrderStatus, setMyOrders } from '../redux/userSlice'
+import { useDispatch } from 'react-redux'
+import { updateOrderStatus } from '../redux/userSlice'
 
 function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
-    const [isDeleting, setIsDeleting] = useState(false)
     const dispatch = useDispatch()
-    const { myOrders } = useSelector(state => state.user)
     const [showOtpBox, setShowOtpBox] = useState(false)
     const [otp, setOtp] = useState("")
     const [loading, setLoading] = useState(false)
@@ -42,24 +40,6 @@ function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
         }
         setLoading(false)
     }
-
-    const handleDeleteOrder = async () => {
-        if (!window.confirm('Hide this order from your dashboard?')) {
-             return
-         }
-         setIsDeleting(true)
-         try {
-             await orderAPI.deleteOrder(data._id)
-             const updatedOrders = myOrders.filter(order => order._id !== data._id)
-             dispatch(setMyOrders(updatedOrders))
-            alert('Order hidden from your dashboard')
-         } catch (error) {
-             console.error('Error deleting order:', error)
-             alert(error.response?.data?.message || 'Failed to delete order. Please try again.')
-         } finally {
-             setIsDeleting(false)
-         }
-     }
 
     return (
         <div className='bg-white rounded-lg shadow p-4 space-y-4'>

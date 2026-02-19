@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import Nav from './Nav'
 import { useDispatch, useSelector } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
@@ -24,7 +24,6 @@ function DeliveryBoy() {
   const [loading, setLoading] = useState(false)
   const [isActive, setIsActive] = useState(userData?.isActive || false)
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 })
-  const [deliveryRatings, setDeliveryRatings] = useState([])
   const [upiByKey, setUpiByKey] = useState({})
   const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)
 
@@ -93,14 +92,14 @@ function DeliveryBoy() {
     }
   }
 
-  const handleFetchByMonth = async () => {
+  const handleFetchByMonth = useCallback(async () => {
     try {
       const res = await orderAPI.getDeliveriesByDate(filterYear, filterMonth)
       setFilteredDeliveries(res.data || { totalDeliveries: 0, deliveries: [] })
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [filterYear, filterMonth])
 
   const handleFetchByDate = async () => {
     try {
@@ -121,7 +120,7 @@ function DeliveryBoy() {
     if (socket) {
       socket.on('newAssignment', data => setAvailableAssignments(prev => [...prev, data]))
       socket.on('assignmentTaken', data => setAvailableAssignments(prev => prev.filter(a => a.assignmentId !== data.assignmentId)))
-      socket.on('update-status', ({ orderId, status, deliveryOtp, otpExpires }) => {
+      socket.on('update-status', ({ status, deliveryOtp }) => {
         if (status === 'delivered') {
           // Refresh data if an order is marked as delivered
           getCurrentOrders()
@@ -139,7 +138,7 @@ function DeliveryBoy() {
         socket.off('update-status')
       }
     }
-  }, [socket])
+  }, [socket, handleFetchByMonth])
 
   // Build UPI Links for current orders
   useEffect(() => {
@@ -186,7 +185,6 @@ function DeliveryBoy() {
       try {
         const res = await ratingAPI.getDeliveryRatings()
         setRatingSummary(res.data?.summary || { average: 0, count: 0 })
-        setDeliveryRatings(res.data?.ratings || [])
       } catch (err) {
         console.log('fetch delivery rating error', err)
       }
@@ -196,7 +194,7 @@ function DeliveryBoy() {
     handleTodayDeliveries()
     handleDeliveryCounts()
     handleFetchByMonth()
-  }, [userData])
+  }, [userData, handleFetchByMonth])
 
   if (!userData) return null;
 

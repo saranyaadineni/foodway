@@ -3,8 +3,6 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../api";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../../firebase";
 import { ClipLoader } from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
@@ -40,22 +38,7 @@ function SignIn() {
   };
 
   const handleGoogleAuth = async () => {
-    setLoading(true);
-    setErr("");
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const { data } = await authAPI.googleAuth({ email: result.user.email });
-      if (data?.token) {
-        localStorage.setItem('token', data.token)
-      }
-      dispatch(setUserData(data));
-      navigate("/");
-    } catch (error) {
-      console.log(error);
-      setErr(error?.response?.data?.message || "Google sign-in failed");
-    }
-    setLoading(false);
+    setErr("Google sign-in is currently unavailable. Please sign in with email and password.");
   };
 
   return (

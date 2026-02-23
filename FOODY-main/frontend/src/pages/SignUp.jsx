@@ -3,8 +3,6 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../api";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../../firebase";
 import { ClipLoader } from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
@@ -77,37 +75,7 @@ function SignUp() {
   };
 
   const handleGoogleAuth = async () => {
-    if (!mobile) return setErr("Mobile number is required");
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-
-      const { data } = await authAPI.googleAuth({
-        fullName: result.user.displayName,
-        email: result.user.email,
-        role,
-        mobile,
-        userType: role === "user" ? userType : undefined,
-      });
-
-      if (data && data.pendingApproval) {
-        setErr("Account created. Pending superadmin approval.");
-        setLoading(false);
-        navigate("/signin");
-        return;
-      }
-
-      if (data?.token) {
-        localStorage.setItem('token', data.token)
-      }
-      dispatch(setUserData(data));
-      navigate("/");
-    } catch (error) {
-      console.log(error);
-      setErr(error?.response?.data?.message || "Google sign-up failed");
-    }
-    setLoading(false);
+    setErr("Google sign-up is currently unavailable. Please sign up with email and password.");
   };
 
   return (

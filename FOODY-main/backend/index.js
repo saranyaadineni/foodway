@@ -64,6 +64,16 @@ app.use("/api/order", orderRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/rating", ratingRouter);
 
+// Extra compatibility: allow backends where /api is stripped by the proxy
+app.use("/auth", authRouter);
+app.use("/user", userRouter);
+app.use("/superadmin", superadminRouter);
+app.use("/shop", shopRouter);
+app.use("/item", itemRouter);
+app.use("/order", orderRouter);
+app.use("/categories", categoryRouter);
+app.use("/rating", ratingRouter);
+
 app.get("/", (req, res) => {
   res.json({ status: "ok" });
 });

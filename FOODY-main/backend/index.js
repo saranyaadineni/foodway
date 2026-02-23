@@ -22,7 +22,7 @@ import { autoRegenerateOtps } from "./controllers/order.controllers.js";
 
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3011;
 
 const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : true;
 

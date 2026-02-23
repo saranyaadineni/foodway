@@ -3,10 +3,15 @@ import axios from "axios";
 /* =======================
    ENV CONFIG
 ======================= */
-const API_URL = import.meta.env.VITE_API_URL;
+let API_URL = import.meta.env.VITE_API_URL;
 
 if (!API_URL) {
   console.error("❌ VITE_API_URL is not defined. Check .env files.");
+  API_URL = "";
+} else {
+  API_URL = API_URL.trim();
+  API_URL = API_URL.replace(/\/+$/, "");
+  API_URL = API_URL.replace(/\/api$/, "");
 }
 
 /* =======================
@@ -38,14 +43,25 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      console.error(
-        "❌ API ERROR:",
-        error.response.status,
-        error.response.data
-      );
-    } else {
-      console.error("❌ NETWORK ERROR:", error.message);
+    const status = error?.response?.status;
+    const url = error?.config?.url || "";
+
+    // Treat unauthenticated /api/user/current as a normal "not logged in" state,
+    // so it does not spam the console with red errors.
+    const isCurrentUserCheck =
+      status === 401 &&
+      (url.endsWith("/api/user/current") || url.includes("/api/user/current?"));
+
+    if (!isCurrentUserCheck) {
+      if (error.response) {
+        console.error(
+          "❌ API ERROR:",
+          error.response.status,
+          error.response.data
+        );
+      } else {
+        console.error("❌ NETWORK ERROR:", error.message);
+      }
     }
     return Promise.reject(error);
   }

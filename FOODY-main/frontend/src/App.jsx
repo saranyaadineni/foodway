@@ -127,11 +127,7 @@ function App() {
         <Route path="/forgot-password" element={authLoading ? null : (!userData ? <ForgotPassword /> : <Navigate to="/" />)} />
 
         {/* 🔐 Protected Routes */}
-        <Route path="/" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <Home />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<Home />} />
 
         <Route path="/create-edit-shop" element={
           <ProtectedRoute user={userData} loading={authLoading}>
@@ -194,8 +190,8 @@ function App() {
           </SuperAdminRoute>
         } />
 
-        {/* ✅ AWS / Cloud Fix */}
-        <Route path="*" element={<Navigate to="/signin" replace />} />
+        {/* ✅ Fallback: any unknown route goes to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

@@ -7,6 +7,7 @@ import Nav from "./Nav.jsx";
 import CategoryCard from "./CategoryCard";
 import FoodCard from "./FoodCard";
 
+import heroImage from "../assets/image7.jpg";
 import { itemAPI } from "../api";
 import { getCategories } from "../category";
 import {
@@ -131,6 +132,54 @@ function UserDashboard() {
     <div className="w-screen min-h-screen bg-[#fff9f6]">
       <Nav />
 
+      <section className="max-w-6xl mx-auto pt-8 px-4 md:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row items-center gap-10 rounded-3xl bg-gradient-to-r from-[#fff0e6] via-[#ffe4f0] to-[#ffe0d1] px-6 md:px-10 py-8 md:py-12 shadow-md">
+          <div className="flex-1 space-y-4 md:space-y-6">
+            <p className="text-xs font-semibold tracking-[0.15em] uppercase text-[#ff4d2d]">
+              {currentCity ? `Food delivery in ${currentCity}` : "Craving something tasty?"}
+            </p>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
+              Order from top restaurants near you in minutes
+            </h1>
+            <p className="text-sm md:text-base text-gray-600 max-w-md">
+              Explore nearby favourites, trending dishes and late-night cravings, all in one place.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <button
+                onClick={() => {
+                  const el = document.getElementById("restaurants-section");
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.03] transition-all text-sm md:text-base"
+              >
+                Browse restaurants
+              </button>
+              {!userData && (
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-[#ff2b85]/40 text-[#ff2b85] bg-white/80 font-semibold hover:bg-[#ff2b85]/5 transition-all text-sm md:text-base"
+                >
+                  Create free account
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 w-full">
+            <div className="relative w-full max-w-sm mx-auto">
+              <div className="absolute -top-3 -left-3 w-16 h-16 bg-[#ffecd9] rounded-full blur-xl" />
+              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-[#ffe0f0] rounded-full blur-2xl" />
+              <img
+                src={heroImage}
+                alt="Delicious food illustration"
+                className="relative z-[1] w-full rounded-3xl shadow-xl object-cover h-[220px] md:h-[260px]"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ---------------- CATEGORIES ---------------- */}
       <section className="max-w-6xl mx-auto p-4 mt-4">
         <div className="flex justify-between items-center mb-4">
@@ -197,7 +246,7 @@ function UserDashboard() {
       </section>
 
       {/* ---------------- SHOPS ---------------- */}
-      <section className="max-w-6xl mx-auto p-4">
+      <section id="restaurants-section" className="max-w-6xl mx-auto p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">
             Best Shops

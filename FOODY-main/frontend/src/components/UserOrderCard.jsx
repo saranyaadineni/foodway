@@ -18,6 +18,83 @@ function UserOrderCard({ data }) {
     const [otpLoading, setOtpLoading] = useState(false)
     const [comments, setComments] = useState({})
     
+    const handleDownloadInvoice = (shopOrder) => {
+        try {
+            const win = window.open('', '_blank')
+            if (!win) {
+                alert('Please allow popups to download the invoice.')
+                return
+            }
+
+            const items = (shopOrder.receipt?.items && shopOrder.receipt.items.length
+                ? shopOrder.receipt.items
+                : (shopOrder.shopOrderItems || []).map(i => ({
+                    name: i.name,
+                    price: i.price,
+                    quantity: i.quantity
+                }))
+            )
+
+            const rows = items.map(i => `
+              <tr>
+                <td style="padding:4px 8px;border:1px solid #ddd;">${i.name}</td>
+                <td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">${i.quantity}</td>
+                <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;">₹${i.price}</td>
+                <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;">₹${Number(i.price) * Number(i.quantity)}</td>
+              </tr>
+            `).join('')
+
+            const total = shopOrder.subtotal || items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0)
+            const receiptNumber = shopOrder.receipt?.receiptNumber || `R-${data.orderId || data._id.slice(-6)}`
+
+            win.document.write(`
+              <!doctype html>
+              <html>
+              <head>
+                <meta charset="utf-8" />
+                <title>Invoice ${receiptNumber}</title>
+              </head>
+              <body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding:24px; color:#111827;">
+                <h1 style="font-size:20px;margin-bottom:4px;">FoodWay Invoice</h1>
+                <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;">Receipt: ${receiptNumber}</p>
+
+                <div style="margin-bottom:16px;font-size:13px;">
+                  <p style="margin:0;"><strong>Customer:</strong> ${data.user?.fullName || ''}</p>
+                  <p style="margin:0;"><strong>Email:</strong> ${data.user?.email || ''}</p>
+                  <p style="margin:0;"><strong>Order ID:</strong> ${data.orderId || data._id}</p>
+                  <p style="margin:0;"><strong>Date:</strong> ${formatDate(data.createdAt)}</p>
+                </div>
+
+                <table style="border-collapse:collapse;width:100%;font-size:13px;margin-bottom:12px;">
+                  <thead>
+                    <tr style="background:#f3f4f6;">
+                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:left;">Item</th>
+                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">Qty</th>
+                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Price</th>
+                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows}
+                  </tbody>
+                </table>
+
+                <div style="text-align:right;font-size:14px;margin-top:8px;">
+                  <p style="margin:0;"><strong>Subtotal:</strong> ₹${total}</p>
+                </div>
+
+                <p style="margin-top:24px;font-size:12px;color:#6b7280;">Thank you for ordering with FoodWay.</p>
+              </body>
+              </html>
+            `)
+            win.document.close()
+            win.focus()
+            win.print()
+        } catch (e) {
+            console.error('invoice download error', e)
+            alert('Failed to generate invoice. Please try again.')
+        }
+    }
 
     const formatDate = (dateString) => {
         const date = new Date(dateString)
@@ -220,6 +297,12 @@ function UserOrderCard({ data }) {
                             <p className='font-semibold text-green-800'>Receipt Generated</p>
                             <p className='text-green-700'>Number: {shopOrder.receipt.receiptNumber}</p>
                             <p className='text-green-700'>Items: {shopOrder.receipt.items?.length || 0} | Subtotal: ₹{shopOrder.receipt.subtotal}</p>
+                            <button
+                                onClick={() => handleDownloadInvoice(shopOrder)}
+                                className='mt-2 inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-green-600 text-white hover:bg-green-700'
+                            >
+                                Download invoice
+                            </button>
                         </div>
                     )}
 

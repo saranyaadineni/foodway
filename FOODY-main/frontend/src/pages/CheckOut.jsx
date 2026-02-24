@@ -127,14 +127,18 @@ function CheckOut() {
   }
 
 const openRazorpayWindow=(orderId,razorOrder)=>{
-  // Check if Razorpay is available
+  const razorKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  if (!razorKey) {
+    alert('Online payment is not configured. Please use Cash on Delivery for now.');
+    return;
+  }
   if (typeof window.Razorpay === 'undefined') {
     alert('Payment service is currently unavailable. Please try again later or use Cash on Delivery.');
     return;
   }
 
   const options={
- key:import.meta.env.VITE_RAZORPAY_KEY_ID,
+ key:razorKey,
  amount:razorOrder.amount,
  currency:'INR',
  name:"FoodWay",
@@ -153,7 +157,7 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
     })
         dispatch(addMyOrder(result.data))
         dispatch(clearCart())
-      navigate("/")
+      navigate("/order-placed")
   } catch (error) {
     console.log(error)
     alert('Payment verification failed. Please contact support.')

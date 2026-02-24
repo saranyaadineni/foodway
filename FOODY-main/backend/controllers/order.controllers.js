@@ -236,8 +236,12 @@ export const verifyPayment = async (req, res) => {
             return res.status(503).json({ message: "Online payments not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET." })
         }
         const payment = await instance.payments.fetch(razorpay_payment_id)
-        if (!payment || payment.status != "captured") {
-            return res.status(400).json({ message: "payment not captured" })
+        if (!payment) {
+            return res.status(400).json({ message: "Payment not found with Razorpay" })
+        }
+        const successStatuses = ["captured", "authorized"]
+        if (!successStatuses.includes(payment.status)) {
+            return res.status(400).json({ message: `Payment status is ${payment.status}` })
         }
         const order = await Order.findById(orderId)
         if (!order) {
@@ -272,9 +276,10 @@ export const verifyPayment = async (req, res) => {
                 }
             });
         }
+        return res.status(200).json(order)
     } catch (error) {
-        console.error('Error in deleteOrder:', error)
-        res.status(500).json({ message: "Internal server error" })
+        console.error('verifyPayment error:', error?.response?.data || error)
+        res.status(500).json({ message: "Payment verification failed" })
     }
 }
 
@@ -1350,6 +1355,5 @@ export const autoRegenerateOtps = async () => {
         console.error(`Auto OTP regeneration error: ${error}`)
     }
 }
-
 
 

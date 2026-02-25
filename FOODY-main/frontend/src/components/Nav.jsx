@@ -404,7 +404,7 @@ function Nav() {
             ) : (
               <>
                 {/* Cart */}
-                {(isUser || !isLoggedIn) && location.pathname === "/search" && (
+                {(isUser || !isLoggedIn) && (location.pathname === "/search" || location.pathname === "/") && (
                   <div
                     className="flex items-center gap-2 cursor-pointer hover:text-[#fc8019] transition-colors relative group"
                     onClick={() => navigate("/cart")}
@@ -422,7 +422,7 @@ function Nav() {
                 )}
 
                 {/* Orders (Only if logged in user) */}
-                {isUser && location.pathname === "/search" && (
+                {isUser && (location.pathname === "/search" || location.pathname === "/") && (
                   <div 
                     className="hidden lg:flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
                     onClick={() => navigate("/my-orders")}
@@ -435,36 +435,44 @@ function Nav() {
             )}
 
             {isLoggedIn ? (
-              <>
+              <div className="relative">
                 <div
-                  className="w-[40px] h-[40px] sm:w-[42px] sm:h-[42px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md"
+                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
                   onClick={() => setShowInfo((prev) => !prev)}
                 >
-                  {userData?.fullName?.slice(0, 1).toUpperCase()}
+                  <div className="w-[40px] h-[40px] sm:w-[42px] sm:h-[42px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md">
+                    {userData?.fullName?.slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:inline">{userData?.fullName?.split(" ")[0]}</span>
                 </div>
 
                 {showInfo && (
-                  <div className="absolute top-[75px] right-3 sm:right-8 bg-white/90 backdrop-blur-2xl shadow-2xl border border-white/40 rounded-2xl p-4 flex flex-col gap-3 w-[200px] animate-fade-in">
-                    <div className="font-semibold text-gray-800 text-center">
+                  <div className="absolute top-[55px] right-0 bg-white/90 backdrop-blur-2xl shadow-2xl border border-white/40 rounded-2xl p-4 flex flex-col gap-3 w-[200px] animate-fade-in z-[10000]">
+                    <div className="font-semibold text-gray-800 text-center border-b border-gray-100 pb-2">
                       {userData.fullName}
                     </div>
                     {userData.role === "user" && (
                       <div
-                        onClick={() => navigate("/my-orders")}
-                        className="text-[#fc8019] font-medium cursor-pointer hover:text-[#ff2b85] transition-all text-center"
+                        onClick={() => {
+                          navigate("/my-orders");
+                          setShowInfo(false);
+                        }}
+                        className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
                       >
+                        <TbReceipt2 size={18} />
                         My Orders
                       </div>
                     )}
                     <div
                       onClick={handleLogOut}
-                      className="text-[#ff2b85] font-medium cursor-pointer hover:text-[#fc8019] transition-all text-center"
+                      className="text-[#ff2b85] font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2 border-t border-gray-100 pt-2"
                     >
+                      <FiUser size={18} />
                       Log Out
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">
                 <button

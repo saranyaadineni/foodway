@@ -149,7 +149,15 @@ function UserDashboard() {
                 onClick={() => {
                   const el = document.getElementById("restaurants-section");
                   if (el) {
-                    el.scrollIntoView({ behavior: "smooth" });
+                    const offset = 80;
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = el.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+                    window.scrollTo({
+                      top: offsetPosition,
+                      behavior: "smooth"
+                    });
                   }
                 }}
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.03] transition-all text-sm md:text-base"

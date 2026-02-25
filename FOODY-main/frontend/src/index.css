@@ -6,7 +6,17 @@
   -ms-overflow-style: none;  /* IE/Edge purane versions */
 }
 
-::-webkit-scrollbar, 
 ::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
+}
+
+@keyframes progress-indefinite {
+  0% { left: -40%; width: 30%; }
+  50% { left: 40%; width: 40%; }
+  100% { left: 100%; width: 30%; }
+}
+
+.animate-progress-indefinite {
+  position: relative;
+  animation: progress-indefinite 1.5s infinite linear;
 }

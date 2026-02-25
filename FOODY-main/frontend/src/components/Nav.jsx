@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { FaLocationDot, FaPlus } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
-import { FiShoppingCart } from "react-icons/fi";
+import { FiShoppingCart, FiHelpCircle } from "react-icons/fi";
 import { TbReceipt2 } from "react-icons/tb";
+import { HiOutlineReceiptPercent } from "react-icons/hi2";
 import { RxCross2 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  setSearchItems,
   logout,
   incrementNewOrdersCount,
   resetNewOrdersCount,
@@ -14,7 +14,7 @@ import {
   setCurrentAddress,
   setCurrentState,
 } from "../redux/userSlice";
-import { userAPI, authAPI, itemAPI } from "../api";
+import { userAPI, authAPI } from "../api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setAddress, setLocation } from "../redux/mapSlice";
 
@@ -22,8 +22,6 @@ function Nav() {
   const { userData, currentCity, currentAddress, cartItems, socket, newOrdersCount } = useSelector((state) => state.user);
   const { myShopData } = useSelector((state) => state.owner);
   const [showInfo, setShowInfo] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [query, setQuery] = useState("");
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [locationInput, setLocationInput] = useState("");
   const [recentLocations, setRecentLocations] = useState([]);
@@ -186,23 +184,6 @@ function Nav() {
     }
   };
 
-  useEffect(() => {
-    const searchItems = async () => {
-      try {
-        const res = await itemAPI.searchItems(query, currentCity);
-        dispatch(setSearchItems(res.data));
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    if (query) {
-      searchItems();
-    } else {
-      dispatch(setSearchItems(null));
-    }
-  }, [query, currentCity, dispatch]);
-
   return (
     <div className="fixed top-0 left-0 w-full h-[70px] bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm z-[9999] flex items-center justify-between px-4 sm:px-8 transition-all">
       {/* Left Section */}
@@ -228,41 +209,50 @@ function Nav() {
       </div>
 
       {/* Desktop Search */}
-      {(isUser || !isLoggedIn) && (
-        <div className="hidden md:flex w-[40%] items-center bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#fc8019] transition-all">
+      {(isUser || !isLoggedIn) && location.pathname !== "/search" && (
+        <div 
+          className="hidden md:flex w-[40%] items-center bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#fc8019] transition-all cursor-pointer"
+          onClick={() => navigate("/search")}
+        >
           <IoIosSearch size={22} className="text-[#ff4d2d]" />
           <input
             type="text"
             placeholder="Search for restaurants or dishes..."
-            className="flex-1 ml-2 outline-none text-gray-700 text-[15px] bg-transparent"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 ml-2 outline-none text-gray-700 text-[15px] bg-transparent cursor-pointer"
+            readOnly
           />
         </div>
       )}
 
       {/* Right Section */}
-      <div className="flex items-center gap-3 sm:gap-5">
-        {/* Mobile Search Toggle */}
-        {(isUser || !isLoggedIn) && (
-          <>
-            {showSearch ? (
-              <RxCross2
-                size={25}
-                className="text-[#ff2b85] md:hidden cursor-pointer"
-                onClick={() => setShowSearch(false)}
-              />
-            ) : (
-              <IoIosSearch
-                size={25}
-                className="text-[#ff2b85] md:hidden cursor-pointer"
-                onClick={() => setShowSearch(true)}
-              />
-            )}
-          </>
+      <div className="flex items-center gap-4 sm:gap-8">
+        {/* Navigation Items (Desktop) */}
+        {(isUser || !isLoggedIn) && location.pathname === "/search" && (
+          <div className="hidden lg:flex items-center gap-8">
+            <div className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group">
+              <HiOutlineReceiptPercent size={22} />
+              <span>Offers</span>
+              <span className="absolute -top-2 -right-4 bg-[#fc8019] text-white text-[9px] px-1 rounded font-bold">NEW</span>
+            </div>
+            <div 
+              className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+              onClick={() => navigate("/help")}
+            >
+              <FiHelpCircle size={20} />
+              <span>Help</span>
+            </div>
+          </div>
         )}
 
-        {/* Owner Buttons (Now visible on mobile too) */}
+        {/* Mobile Search Icon */}
+        {(isUser || !isLoggedIn) && location.pathname !== "/search" && (
+          <IoIosSearch
+            size={25}
+            className="text-[#ff2b85] md:hidden cursor-pointer"
+            onClick={() => navigate("/search")}
+          />
+        )}
+
         {isOwner ? (
           <>
             {myShopData && (
@@ -318,38 +308,32 @@ function Nav() {
         ) : (
           <>
             {/* Cart */}
-            {isUser && (
+            {(isUser || !isLoggedIn) && location.pathname === "/search" && (
               <div
-                className="relative cursor-pointer hover:scale-110 transition-transform"
+                className="flex items-center gap-2 cursor-pointer hover:text-[#fc8019] transition-colors relative group"
                 onClick={() => navigate("/cart")}
               >
-                <FiShoppingCart size={24} className="text-[#ff2b85]" />
-                {cartItems?.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white text-[12px] rounded-full w-[18px] h-[18px] flex items-center justify-center font-semibold shadow-md">
-                    {cartItems.length}
-                  </span>
-                )}
+                <div className="relative">
+                  <FiShoppingCart size={22} className={cartItems?.length > 0 ? "text-[#60b246]" : "text-gray-700 group-hover:text-[#fc8019]"} />
+                  {cartItems?.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-[#60b246] text-white text-[10px] rounded-full w-[16px] h-[16px] flex items-center justify-center font-bold">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline font-medium">Cart</span>
               </div>
             )}
 
-            {/* Orders */}
-            {isUser && (
-              <>
-                <button
-                  onClick={() => navigate("/my-orders")}
-                  className="hidden sm:block border border-[#fc8019]/40 text-[#fc8019] px-4 py-2 rounded-full font-semibold bg-white hover:bg-[#fc8019]/10 transition-all shadow-sm"
-                >
-                  Orders
-                </button>
-                 {/* Mobile Orders (icon only) */}
-                <button
-                  onClick={() => navigate("/my-orders")}
-                  className="sm:hidden flex items-center justify-center w-[38px] h-[38px] rounded-full border border-[#fc8019]/40 text-[#fc8019] bg-white shadow-sm hover:bg-[#fc8019]/10 transition-all"
-                  title="Orders"
-                >
-                  <TbReceipt2 size={18} />
-                </button>
-              </>
+            {/* Orders (Only if logged in user) */}
+            {isUser && location.pathname === "/search" && (
+              <div 
+                className="hidden lg:flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+                onClick={() => navigate("/my-orders")}
+              >
+                <TbReceipt2 size={22} />
+                <span>Orders</span>
+              </div>
             )}
           </>
         )}
@@ -503,22 +487,6 @@ function Nav() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Search Bar */}
-      {showSearch && (isUser || !isLoggedIn) && (
-        <div className="absolute top-[70px] left-0 w-full bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-md py-2 px-4 flex md:hidden">
-          <div className="flex items-center w-full bg-white border border-gray-200 rounded-full px-3 py-2">
-            <IoIosSearch size={20} className="text-[#ff2b85]" />
-            <input
-              type="text"
-              placeholder="Search food or restaurants..."
-              className="flex-1 ml-2 outline-none text-gray-700 text-[14px] bg-transparent"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
           </div>
         </div>
       )}

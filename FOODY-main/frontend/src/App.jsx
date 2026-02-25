@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import CreateEditShop from "./pages/CreateEditShop";
 import AddItem from "./pages/AddItem";
+import Search from "./pages/Search";
 import EditItem from "./pages/EditItem";
 import CartPage from "./pages/CartPage";
 import CheckOut from "./pages/CheckOut";
@@ -15,6 +16,7 @@ import OrderPlaced from "./pages/OrderPlaced";
 import MyOrders from "./pages/MyOrders";
 import TrackOrderPage from "./pages/TrackOrderPage";
 import Shop from "./pages/Shop";
+import Help from "./pages/Help";
 import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import CartNotification from "./components/CartNotification";
 import useGetCurrentUser from "./hooks/useGetCurrentUser";
@@ -125,6 +127,8 @@ function App() {
         <Route path="/signup" element={authLoading ? null : (!userData ? <SignUp /> : <Navigate to="/" />)} />
         <Route path="/signin" element={authLoading ? null : (!userData ? <SignIn /> : <Navigate to="/" />)} />
         <Route path="/forgot-password" element={authLoading ? null : (!userData ? <ForgotPassword /> : <Navigate to="/" />)} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/help" element={<Help />} />
 
         {/* 🔐 Protected Routes */}
         <Route path="/" element={<Home />} />

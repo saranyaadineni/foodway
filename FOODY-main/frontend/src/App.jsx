@@ -82,18 +82,18 @@ function App() {
     
     const isProd = window.location.hostname !== 'localhost';
     
-    // In production, force polling to avoid WebSocket connection failed errors
-    // and noisy console logs. Polling works everywhere.
+    // In production, allow both websocket and polling. WebSocket is preferred.
     const socket = io(socketBaseUrl, {
       withCredentials: true,
-      transports: isProd ? ["polling"] : ["polling", "websocket"],
+      transports: ["websocket", "polling"],
       path: "/socket.io/",
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 15,
       reconnectionDelay: 2000,
       secure: socketBaseUrl.startsWith('https'),
       rejectUnauthorized: false,
-      autoConnect: true
+      autoConnect: true,
+      timeout: 20000
     });
 
     dispatch(setSocket(socket));

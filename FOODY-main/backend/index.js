@@ -24,10 +24,23 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3011;
 
-const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : true;
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "https://foody.speshway.site"
+].filter(Boolean);
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked for origin: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -85,6 +98,23 @@ cron.schedule("0 */2 * * *", () => {
 
 
 server.listen(port, async () => {
-  await connectDb();
-  console.log(`🚀 Server running on port ${port}`);
+  try {
+    await connectDb();
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`📡 Allowed Origins: ${allowedOrigins.join(", ")}`);
+  } catch (error) {
+    console.error("❌ Startup error:", error);
+  }
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  // Optional: Graceful shutdown
+  // process.exit(1);
 });

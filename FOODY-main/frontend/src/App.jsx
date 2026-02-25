@@ -151,11 +151,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/cart" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <CartPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/cart" element={<CartPage />} />
 
         <Route path="/checkout" element={
           <ProtectedRoute user={userData} loading={authLoading}>

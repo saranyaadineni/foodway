@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { logout } from '../redux/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, updateAboutContent, updateContactContent } from '../redux/userSlice';
 import { authAPI, superAdminAPI, getImageUrl } from '../api';
 
 const SuperAdminDashboard = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const { aboutContent, contactContent } = useSelector((state) => state.user);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    // Content Management State
+    const [editAbout, setEditAbout] = useState(aboutContent);
+    const [editContact, setEditContact] = useState(contactContent);
 
     // Dashboard data
     const [dashboardStats, setDashboardStats] = useState({
@@ -69,6 +74,16 @@ const SuperAdminDashboard = () => {
             dispatch(logout());
             navigate('/signin');
         }
+    };
+
+    const handleSaveAbout = () => {
+        dispatch(updateAboutContent(editAbout));
+        showMessage('About content updated successfully!');
+    };
+
+    const handleSaveContact = () => {
+        dispatch(updateContactContent(editContact));
+        showMessage('Contact information updated successfully!');
     };
 
     // Fetch dashboard statistics
@@ -424,7 +439,8 @@ const SuperAdminDashboard = () => {
                                 { id: 'owners', label: 'Owner Approvals' },
                                 { id: 'categories', label: 'Categories' },
                                 { id: 'users', label: 'User Management' },
-                                { id: 'usertypes', label: 'User Types' }
+                                { id: 'usertypes', label: 'User Types' },
+                                { id: 'content', label: 'Manage Content' }
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -898,6 +914,101 @@ const SuperAdminDashboard = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Manage Content Tab */}
+                    {activeTab === 'content' && (
+                        <div className="space-y-8">
+                            {/* About Us Content */}
+                            <div className="bg-white/80 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-6">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage About Us</h2>
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Title</label>
+                                        <input
+                                            type="text"
+                                            value={editAbout.title}
+                                            onChange={(e) => setEditAbout({ ...editAbout, title: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Description</label>
+                                        <textarea
+                                            rows="3"
+                                            value={editAbout.description}
+                                            onChange={(e) => setEditAbout({ ...editAbout, description: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Mission Statement</label>
+                                        <textarea
+                                            rows="3"
+                                            value={editAbout.mission}
+                                            onChange={(e) => setEditAbout({ ...editAbout, mission: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#ff2b85] outline-none transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+                                    <button
+                                        onClick={handleSaveAbout}
+                                        className="bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:scale-105 transition-all"
+                                    >
+                                        Save About Content
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Contact Us Content */}
+                            <div className="bg-white/80 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-6">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Contact Information</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Support Email</label>
+                                        <input
+                                            type="email"
+                                            value={editContact.email}
+                                            onChange={(e) => setEditContact({ ...editContact, email: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Phone Number</label>
+                                        <input
+                                            type="text"
+                                            value={editContact.phone}
+                                            onChange={(e) => setEditContact({ ...editContact, phone: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2 md:col-span-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Office Address</label>
+                                        <textarea
+                                            rows="2"
+                                            value={editContact.address}
+                                            onChange={(e) => setEditContact({ ...editContact, address: e.target.value })}
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+                                    <div className="flex flex-col gap-2 md:col-span-2">
+                                        <label className="text-sm font-bold text-gray-600 ml-1">Google Maps Embed URL (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={editContact.mapUrl}
+                                            onChange={(e) => setEditContact({ ...editContact, mapUrl: e.target.value })}
+                                            placeholder="https://www.google.com/maps/embed?..."
+                                            className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleSaveContact}
+                                    className="mt-6 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:scale-105 transition-all"
+                                >
+                                    Save Contact Info
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

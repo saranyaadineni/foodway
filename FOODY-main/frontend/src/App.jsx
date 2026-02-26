@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import SignUp from "./pages/SignUp";
@@ -17,8 +17,11 @@ import MyOrders from "./pages/MyOrders";
 import TrackOrderPage from "./pages/TrackOrderPage";
 import Shop from "./pages/Shop";
 import Help from "./pages/Help";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import CartNotification from "./components/CartNotification";
+import Footer from "./components/Footer";
 import useGetCurrentUser from "./hooks/useGetCurrentUser";
 import useUpdateLocation from "./hooks/useUpdateLocation";
 import useGetCity from "./hooks/useGetCity";
@@ -60,6 +63,7 @@ const SuperAdminRoute = ({ user, loading, children }) => {
 function App() {
   const { userData, authLoading } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const location = useLocation();
 
   // 🔄 Initial Data Fetching
   useGetCurrentUser();
@@ -79,8 +83,6 @@ function App() {
 
     // Strip /api from serverUrl if it exists, as socket.io usually listens at the root
     const socketBaseUrl = serverUrl.replace(/\/api$/, "");
-    
-    const isProd = window.location.hostname !== 'localhost';
     
     // In production, allow both websocket and polling. WebSocket is preferred.
     const socket = io(socketBaseUrl, {
@@ -118,6 +120,9 @@ function App() {
     };
   }, [userData?._id, dispatch]);
 
+  const noFooterPaths = ["/signin", "/signup", "/forgot-password", "/superadmin"];
+  const showFooter = !noFooterPaths.includes(location.pathname);
+
   return (
     <>
       <CartNotification />
@@ -129,6 +134,8 @@ function App() {
         <Route path="/forgot-password" element={authLoading ? null : (!userData ? <ForgotPassword /> : <Navigate to="/" />)} />
         <Route path="/search" element={<Search />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* 🔐 Protected Routes */}
         <Route path="/" element={<Home />} />
@@ -193,6 +200,8 @@ function App() {
         {/* ✅ Fallback: any unknown route goes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {showFooter && <Footer />}
     </>
   );
 }

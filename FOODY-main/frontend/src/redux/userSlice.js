@@ -44,6 +44,19 @@ const initialState = {
 
   cartClearedForNewShop: false,
   newOrdersCount: 0,
+
+  aboutContent: loadJSON("aboutContent", {
+    title: "About FoodWay",
+    description: "Delivering happiness to your doorstep. Order from the best restaurants and enjoy fresh, delicious food in minutes.",
+    mission: "Our mission is to elevate the quality of life for the urban consumer by offering unparalleled convenience. Convenience is what makes us tick. It's what makes us get out of bed and say, \"Let's do this.\"",
+    image: ""
+  }),
+  contactContent: loadJSON("contactContent", {
+    email: "support@foodway.com",
+    phone: "+1 (555) 123-4567",
+    address: "123 Foodie Street, Gourmet City, GC 54321",
+    mapUrl: ""
+  }),
 };
 
 /* ======================
@@ -241,6 +254,16 @@ const userSlice = createSlice({
       state.newOrdersCount = 0;
     },
 
+    /* ---------- CONTENT MANAGEMENT ---------- */
+    updateAboutContent: (state, action) => {
+      state.aboutContent = { ...state.aboutContent, ...action.payload };
+      saveJSON("aboutContent", state.aboutContent);
+    },
+    updateContactContent: (state, action) => {
+      state.contactContent = { ...state.contactContent, ...action.payload };
+      saveJSON("contactContent", state.contactContent);
+    },
+
     /* ---------- LOGOUT ---------- */
     logout: (state) => {
       Object.assign(state, {
@@ -282,6 +305,8 @@ export const {
   updateRealtimeOrderStatus,
   incrementNewOrdersCount,
   resetNewOrdersCount,
+  updateAboutContent,
+  updateContactContent,
   logout,
 } = userSlice.actions;
 

@@ -432,7 +432,7 @@ const SuperAdminDashboard = () => {
                 {/* Navigation Tabs */}
                 <div className="border-b border-white/40 backdrop-blur-xl bg-white/20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <nav className="flex space-x-8 py-4">
+                        <nav className="flex space-x-4 sm:space-x-8 py-4 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap">
                             {[
                                 { id: 'dashboard', label: 'Dashboard' },
                                 { id: 'deliveryboys', label: 'Delivery Boy Approvals' },
@@ -445,7 +445,7 @@ const SuperAdminDashboard = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                    className={`py-2 px-1 border-b-2 font-medium text-sm inline-block ${
                                         activeTab === tab.id
                                             ? 'border-[#fc8019] text-[#fc8019] bg-[#fc8019]/10'
                                             : 'border-transparent text-gray-600 hover:text-[#fc8019] hover:border-[#fc8019]/50 transition-colors'
@@ -505,23 +505,23 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-4">
                                     {pendingDeliveryBoys.map((deliveryBoy) => (
                                         <div key={deliveryBoy._id} className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:bg-white/80 transition-colors">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h3 className="text-lg font-medium text-gray-900">{deliveryBoy.fullName}</h3>
-                                                    <p className="text-sm text-gray-500">{deliveryBoy.email}</p>
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-lg font-medium text-gray-900 truncate">{deliveryBoy.fullName}</h3>
+                                                    <p className="text-sm text-gray-500 truncate">{deliveryBoy.email}</p>
                                                     <p className="text-sm text-gray-500">{deliveryBoy.mobile}</p>
                                                 </div>
-                                                <div className="flex space-x-2">
+                                                <div className="flex space-x-2 shrink-0">
                                                     <button
                                                         onClick={() => updateDeliveryBoyStatus(deliveryBoy._id, 'approve')}
-                                                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
+                                                        className="flex-1 sm:flex-none bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60 text-sm font-semibold"
                                                         disabled={loading}
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
                                                         onClick={() => updateDeliveryBoyStatus(deliveryBoy._id, 'reject')}
-                                                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
+                                                        className="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60 text-sm font-semibold"
                                                         disabled={loading}
                                                     >
                                                         Reject
@@ -547,23 +547,23 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-4">
                                     {pendingOwners.map((owner) => (
                                         <div key={owner._id} className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:bg-white/80 transition-colors">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h3 className="text-lg font-medium text-gray-900">{owner.fullName}</h3>
-                                                    <p className="text-sm text-gray-500">{owner.email}</p>
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-lg font-medium text-gray-900 truncate">{owner.fullName}</h3>
+                                                    <p className="text-sm text-gray-500 truncate">{owner.email}</p>
                                                     <p className="text-sm text-gray-500">{owner.mobile}</p>
                                                 </div>
-                                                <div className="flex space-x-2">
+                                                <div className="flex space-x-2 shrink-0">
                                                     <button
                                                         onClick={() => updateOwnerStatus(owner._id, 'approve')}
-                                                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
+                                                        className="flex-1 sm:flex-none bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60 text-sm font-semibold"
                                                         disabled={loading}
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
                                                         onClick={() => updateOwnerStatus(owner._id, 'reject')}
-                                                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
+                                                        className="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60 text-sm font-semibold"
                                                         disabled={loading}
                                                     >
                                                         Reject
@@ -875,24 +875,24 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-4">
                                     {userTypes.map((userType) => (
                                         <div key={userType._id} className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:bg-white/80 transition-colors">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h3 className="text-lg font-medium text-gray-900">{userType.name}</h3>
-                                                    <p className="text-sm text-gray-500">{userType.description}</p>
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-lg font-medium text-gray-900 truncate">{userType.name}</h3>
+                                                    <p className="text-sm text-gray-500 line-clamp-2">{userType.description}</p>
                                                     <div className="mt-2">
-                                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full border ${
                                                             userType.deliveryAllowed
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-red-100 text-red-800'
+                                                                ? 'bg-green-50 text-green-700 border-green-200'
+                                                                : 'bg-red-50 text-red-700 border-red-200'
                                                         }`}>
-                                                            Delivery: {userType.deliveryAllowed ? 'Enabled' : 'Disabled'}
+                                                            DELIVERY: {userType.deliveryAllowed ? 'ENABLED' : 'DISABLED'}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="flex space-x-2">
+                                                <div className="flex space-x-2 shrink-0">
                                                     <button
                                                         onClick={() => updateUserTypeDelivery(userType._id, !userType.deliveryAllowed)}
-                                                        className={`px-4 py-2 rounded-xl text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60 ${
+                                                        className={`flex-1 sm:flex-none px-3 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60 ${
                                                             userType.deliveryAllowed
                                                                 ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
                                                                 : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
@@ -903,7 +903,7 @@ const SuperAdminDashboard = () => {
                                                     </button>
                                                     <button
                                                         onClick={() => deleteUserType(userType._id)}
-                                                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60"
+                                                        className="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60"
                                                         disabled={loading}
                                                     >
                                                         Delete

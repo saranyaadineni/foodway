@@ -85,18 +85,19 @@ function App() {
     // Strip /api from serverUrl if it exists, as socket.io usually listens at the root
     const socketBaseUrl = serverUrl.replace(/\/api$/, "");
     
-    // In production, allow both websocket and polling. WebSocket is preferred.
+    // In production, allow both websocket and polling. Polling first is safer for proxies.
     const socket = io(socketBaseUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       path: "/socket.io/",
       reconnection: true,
-      reconnectionAttempts: 15,
-      reconnectionDelay: 2000,
-      secure: socketBaseUrl.startsWith('https'),
+      reconnectionAttempts: 20,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      secure: socketBaseUrl.startsWith('https') || window.location.protocol === 'https:',
       rejectUnauthorized: false,
       autoConnect: true,
-      timeout: 20000
+      timeout: 30000
     });
 
     dispatch(setSocket(socket));

@@ -21,20 +21,32 @@ import { socketHandler } from "./socket.js";
 import { autoRegenerateOtps } from "./controllers/order.controllers.js";
 
 const app = express();
+app.set('trust proxy', 1); // Trust Cloudflare proxy
 const server = http.createServer(app);
 const port = process.env.PORT || 3011;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
-  "https://foody.speshway.site"
+  "https://foody.speshway.site",
+  "http://foody.speshway.site"
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+    
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin === "*") return true;
+      try {
+        return new URL(origin).hostname === new URL(allowedOrigin).hostname;
+      } catch {
+        return origin === allowedOrigin;
+      }
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked for origin: ${origin}`);
@@ -43,19 +55,25 @@ app.use(cors({
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
 }));
 
 
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(cookieParser());
 
 
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
+    methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  transports: ["polling", "websocket"],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 app.set("io", io);
@@ -106,6 +124,10 @@ server.listen(port, async () => {
     console.error("❌ Startup error:", error);
   }
 });
+
+// Cloudflare / Proxy resilience
+server.keepAliveTimeout = 65000; 
+server.headersTimeout = 66000; 
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {

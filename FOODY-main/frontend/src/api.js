@@ -20,7 +20,7 @@ if (!API_URL) {
 const api = axios.create({
   baseURL: API_URL, // ⚠️ must NOT end with /api
   withCredentials: true,
-  timeout: 15000,
+  timeout: 30000,
 });
 
 /* =======================

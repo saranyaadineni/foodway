@@ -178,6 +178,9 @@ export const itemAPI = {
     api.get("/api/item/search-items", {
       params: { query, city },
     }),
+
+  getOffers: (city) =>
+    api.get(`/api/item/offers/${city}`),
 };
 
 /* =======================

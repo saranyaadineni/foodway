@@ -10,6 +10,7 @@ import CreateEditShop from "./pages/CreateEditShop";
 import AddItem from "./pages/AddItem";
 import Search from "./pages/Search";
 import EditItem from "./pages/EditItem";
+import Offers from "./pages/Offers";
 import CartPage from "./pages/CartPage";
 import CheckOut from "./pages/CheckOut";
 import OrderPlaced from "./pages/OrderPlaced";
@@ -136,6 +137,7 @@ function App() {
         <Route path="/help" element={<Help />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/offers" element={<Offers />} />
 
         {/* 🔐 Protected Routes */}
         <Route path="/" element={<Home />} />

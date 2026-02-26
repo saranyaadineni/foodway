@@ -20,6 +20,12 @@ const isAvailable = data.stockStatus === 'in_stock' || data.stockStatus === 'lim
 const isShopOpen = data.shop?.isOpen !== false
 const canOrder = isAvailable && isShopOpen
 
+// Offer calculation
+const hasOffer = data.hasOffer && data.offerPercentage > 0;
+const discountedPrice = hasOffer 
+  ? (data.price - (data.price * data.offerPercentage) / 100).toFixed(2) 
+  : data.price;
+
     const renderStars=(rating)=>{   //r=3
         const stars=[];
         for (let i = 1; i <= 5; i++) {
@@ -65,6 +71,13 @@ const newQty=quantity-1
           </div>
         )}
 
+        {hasOffer && (
+          <div className='absolute bottom-3 left-3 bg-[#60b246] text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-lg z-10 flex flex-col items-center leading-none'>
+            <span className='mb-1'>{data.offerPercentage}% OFF</span>
+            <span className='text-[8px] opacity-80'>SPECIAL OFFER</span>
+          </div>
+        )}
+
 <img src={getImageUrl(data.image)} alt="" className='w-full h-full object-cover transition-transform duration-300 hover:scale-105'/>
       </div>
 
@@ -92,9 +105,16 @@ const newQty=quantity-1
       </div>
 
 <div className='flex items-center justify-between mt-auto p-3'>
-<span className='font-bold text-gray-900 text-lg'>
-    ₹{data.price}
-</span>
+<div className='flex flex-col'>
+  {hasOffer && (
+    <span className='text-[10px] text-gray-400 line-through font-medium leading-none mb-1'>
+      ₹{data.price}
+    </span>
+  )}
+  <span className='font-bold text-gray-900 text-lg leading-none'>
+      ₹{discountedPrice}
+  </span>
+</div>
 
 <div className={`flex items-center border rounded-full overflow-hidden shadow-sm ${!canOrder ? 'opacity-50 pointer-events-none' : ''}`}>
 <button className='px-2 py-1 hover:bg-gray-100 transition' onClick={handleDecrease} disabled={!canOrder}>

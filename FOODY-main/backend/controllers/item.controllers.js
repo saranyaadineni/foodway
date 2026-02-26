@@ -4,7 +4,7 @@ import uploadToCloudinary from "../utils/s3Upload.js";
 
 export const addItem = async (req, res) => {
     try {
-        const { name, category, foodType, price, preparationTime, stockStatus } = req.body
+        const { name, category, foodType, price, preparationTime, stockStatus, hasOffer, offerPercentage } = req.body
         
         // Validate required fields
         if (!name || !category || !foodType || !price) {
@@ -40,10 +40,12 @@ export const addItem = async (req, res) => {
             price, 
             image, 
             shop: shop._id,
-            preparationTime: preparationTime || 15,
+            preparationTime: preparationTime ? Number(preparationTime) : 15,
             stockStatus: stockStatus || "in_stock",
             city: shop.city,
-            state: shop.state
+            state: shop.state,
+            hasOffer: String(hasOffer).toLowerCase() === "true",
+            offerPercentage: offerPercentage ? Number(offerPercentage) : 0
         })
 
         shop.items.push(item._id)
@@ -86,7 +88,7 @@ export const addItem = async (req, res) => {
 export const editItem = async (req, res) => {
     try {
         const itemId = req.params.itemId
-        const { name, category, foodType, price, preparationTime, stockStatus } = req.body
+        const { name, category, foodType, price, preparationTime, stockStatus, hasOffer, offerPercentage } = req.body
         let image;
         if (req.file) {
             image = await uploadToCloudinary(req.file)
@@ -105,6 +107,14 @@ export const editItem = async (req, res) => {
         }
         if (preparationTime) updateData.preparationTime = preparationTime
         if (stockStatus) updateData.stockStatus = stockStatus
+        
+        if (hasOffer !== undefined) {
+            // Convert string "true"/"false" or boolean true/false to boolean
+            updateData.hasOffer = String(hasOffer).toLowerCase() === "true";
+        }
+        if (offerPercentage !== undefined) {
+            updateData.offerPercentage = offerPercentage ? Number(offerPercentage) : 0;
+        }
         
         const item = await Item.findByIdAndUpdate(itemId, updateData, { new: true })
         if (!item) {
@@ -320,7 +330,27 @@ export const searchItems=async (req,res) => {
 
         return res.status(200).json(items)
     } catch (error) {
-         return res.status(500).json({ message: `search items error ${error}` })
+        return res.status(500).json({ message: `get items error ${error}` })
+    }
+}
+
+export const getOfferItems = async (req, res) => {
+    try {
+        const { city } = req.params;
+        let query = { hasOffer: true };
+        
+        if (city && city.toLowerCase() !== 'all') {
+            const trimmedCity = city.trim();
+            query.$or = [
+                { city: { $regex: new RegExp(`^${trimmedCity}$`, "i") } },
+                { city: { $regex: new RegExp(trimmedCity, "i") } }
+            ];
+        }
+
+        const items = await Item.find(query).populate("shop", "name image isOpen");
+        return res.status(200).json(items);
+    } catch (error) {
+        return res.status(500).json({ message: `get offer items error ${error}` });
     }
 }
 

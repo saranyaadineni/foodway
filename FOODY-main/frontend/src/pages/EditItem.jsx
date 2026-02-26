@@ -20,6 +20,8 @@ function EditItem() {
   const [backendImage, setBackendImage] = useState(null);
   const [category, setCategory] = useState("");
   const [foodType, setFoodType] = useState("");
+  const [hasOffer, setHasOffer] = useState(false);
+  const [offerPercentage, setOfferPercentage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState([]);
 
@@ -38,6 +40,8 @@ function EditItem() {
       formData.append("category", category);
       formData.append("foodType", foodType);
       formData.append("price", price);
+      formData.append("hasOffer", hasOffer ? "true" : "false");
+      formData.append("offerPercentage", hasOffer ? offerPercentage : 0);
       if (backendImage) formData.append("image", backendImage);
 
       const result = await itemAPI.editItem(itemId, formData);
@@ -79,6 +83,8 @@ function EditItem() {
     setPrice(currentItem?.price || 0);
     setCategory(currentItem?.category || "");
     setFoodType(currentItem?.foodType || "");
+    setHasOffer(currentItem?.hasOffer || false);
+    setOfferPercentage(currentItem?.offerPercentage || 0);
     setFrontendImage(getImageUrl(currentItem?.image) || "");
   }, [currentItem]);
 
@@ -163,6 +169,42 @@ function EditItem() {
               value={price}
               required
             />
+          </div>
+
+          <div className="flex flex-col gap-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-200/50">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-gray-700">Has Offer?</label>
+              <input
+                type="checkbox"
+                checked={hasOffer}
+                onChange={(e) => setHasOffer(e.target.checked)}
+                className="w-5 h-5 accent-[#ff2b85] cursor-pointer"
+              />
+            </div>
+            {hasOffer && (
+              <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-xs font-bold text-[#ff2b85] uppercase tracking-wider">
+                  Offer Percentage (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="Enter percentage (e.g. 20)"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all"
+                    onChange={(e) => setOfferPercentage(e.target.value)}
+                    value={offerPercentage}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                </div>
+                {price > 0 && offerPercentage > 0 && (
+                  <p className="text-xs text-gray-500 font-medium pl-1">
+                    Discounted Price: <span className="text-[#60b246] font-bold">₹{(price - (price * offerPercentage) / 100).toFixed(2)}</span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Category */}

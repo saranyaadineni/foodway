@@ -64,6 +64,16 @@ const itemSchema = new mongoose.Schema({
        type: Number,
        default: 0
    },
+   hasOffer: {
+       type: Boolean,
+       default: false
+   },
+   offerPercentage: {
+       type: Number,
+       min: 0,
+       max: 100,
+       default: 0
+   },
    isNewItem: {
        type: Boolean,
        default: true

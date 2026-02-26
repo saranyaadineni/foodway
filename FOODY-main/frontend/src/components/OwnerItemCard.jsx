@@ -68,6 +68,14 @@ function OwnerItemCard({data}) {
 </h2>
 <p><span className='font-medium text-gray-70'>Category:</span> {data.category}</p>
 <p><span className='font-medium text-gray-70'>Food Type:</span> {data.foodType}</p>
+{data.hasOffer && (
+  <p className='mt-1'>
+    <span className='font-medium text-gray-70'>Offer:</span> 
+    <span className='ml-1 px-1.5 py-0.5 rounded-md bg-[#60b246]/10 text-[#60b246] text-xs font-bold border border-[#60b246]/20'>
+      {data.offerPercentage}% OFF
+    </span>
+  </p>
+)}
 {/* Stock Status Display */}
 <div className='mt-2'>
   <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStockStatusColor(stockStatus)}`}>

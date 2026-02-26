@@ -185,9 +185,10 @@ function AddItem() {
             </label>
             <input
               type="number"
+              min="0"
               placeholder="Enter price"
               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => setPrice(Math.max(0, e.target.value))}
               value={price}
             />
           </div>
@@ -214,7 +215,7 @@ function AddItem() {
                     max="100"
                     placeholder="Enter percentage (e.g. 20)"
                     className="w-full border border-gray-300 rounded-xl px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all"
-                    onChange={(e) => setOfferPercentage(e.target.value)}
+                    onChange={(e) => setOfferPercentage(Math.max(0, Math.min(100, e.target.value)))}
                     value={offerPercentage}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>

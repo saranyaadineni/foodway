@@ -46,10 +46,15 @@ function TrackOrderPage() {
          </>:<p className='text-green-600 font-semibold text-lg'>Delivered</p>}
 
 {(shopOrder.assignedDeliveryBoy && shopOrder.status !== "delivered") && (
-  <div className="bg-blue-50 p-4 rounded-lg">
-    <p className="text-sm text-blue-700 font-medium">
-      Your delivery boy is on the way! Please contact them at the number above for any updates.
+  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+    <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
+        <span className='animate-pulse w-2 h-2 bg-blue-500 rounded-full'></span>
+        {shopOrder.status === "accepted" && "Delivery partner has accepted your order and is heading to the shop."}
+        {shopOrder.status === "picked up" && "Delivery partner has picked up your order!"}
+        {shopOrder.status === "out of delivery" && "Delivery partner is on the way to your location!"}
+        {(!["accepted", "picked up", "out of delivery"].includes(shopOrder.status)) && "Your delivery boy is on the way!"}
     </p>
+    <p className='text-xs text-blue-500 mt-1 ml-4'>Please contact them at the number above for any updates.</p>
   </div>
 )}
 

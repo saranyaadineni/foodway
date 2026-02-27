@@ -47,7 +47,7 @@ const shopOrderSchema = new mongoose.Schema({
     shopOrderItems: [shopOrderItemSchema],
     status:{
         type:String,
-        enum:["pending","confirmed","rejected","preparing","out of delivery","delivered","cancelled"],
+        enum:["pending","confirmed","rejected","preparing","accepted","picked up","out of delivery","delivered","cancelled"],
         default:"pending"
     },
   receipt: {

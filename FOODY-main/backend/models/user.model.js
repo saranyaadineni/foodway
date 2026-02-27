@@ -70,6 +70,11 @@ const userSchema = new mongoose.Schema({
    location:{
 type:{type:String,enum:['Point'],default:'Point'},
 coordinates:{type:[Number],default:[0,0]}
+   },
+   deliveryBoyId: {
+       type: String,
+       unique: true,
+       sparse: true // Allows null/missing for non-delivery boys
    }
   
 }, { timestamps: true })

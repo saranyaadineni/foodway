@@ -56,8 +56,38 @@ export const updateDeliveryBoyStatus = async (req, res) => {
         const { userId, action } = req.body; // action: 'approve' or 'reject'
         
         if (action === 'approve') {
-            await User.findByIdAndUpdate(userId, { isApproved: true });
-            res.status(200).json({ message: "Delivery boy approved successfully" });
+            const deliveryBoy = await User.findById(userId);
+            if (!deliveryBoy) {
+                return res.status(404).json({ message: "Delivery boy not found" });
+            }
+
+            // Generate deliveryBoyId if it doesn't exist
+            if (!deliveryBoy.deliveryBoyId) {
+                // Find the latest deliveryBoyId
+                const lastBoy = await User.findOne({ 
+                    deliveryBoyId: { $regex: /^FW-DEL-/ } 
+                }).sort({ deliveryBoyId: -1 });
+
+                let nextIdNumber = 1;
+                if (lastBoy && lastBoy.deliveryBoyId) {
+                    const match = lastBoy.deliveryBoyId.match(/FW-DEL-(\d+)/);
+                    if (match) {
+                        nextIdNumber = parseInt(match[1]) + 1;
+                    }
+                }
+
+                // Format: FW-DEL-0001
+                const nextDeliveryBoyId = `FW-DEL-${String(nextIdNumber).padStart(4, '0')}`;
+                deliveryBoy.deliveryBoyId = nextDeliveryBoyId;
+            }
+
+            deliveryBoy.isApproved = true;
+            await deliveryBoy.save();
+            
+            res.status(200).json({ 
+                message: "Delivery boy approved successfully",
+                deliveryBoyId: deliveryBoy.deliveryBoyId 
+            });
         } else if (action === 'reject') {
             await User.findByIdAndDelete(userId);
             res.status(200).json({ message: "Delivery boy rejected and removed" });

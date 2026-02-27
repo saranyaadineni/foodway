@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
 import { orderAPI, userAPI, itemAPI, ratingAPI } from '../api'
 import { ClipLoader } from 'react-spinners'
-import { FaStar, FaClipboardList, FaTruck, FaRegSmile, FaCalendarAlt, FaListAlt } from 'react-icons/fa'
+import { FaStar, FaClipboardList, FaTruck, FaRegSmile, FaCalendarAlt, FaListAlt, FaMoneyBillWave, FaTimes } from 'react-icons/fa'
 
 function DeliveryBoy() {
   const { userData, socket } = useSelector(state => state.user)
@@ -12,11 +12,12 @@ function DeliveryBoy() {
 
   const [currentOrders, setCurrentOrders] = useState([])
   const [availableAssignments, setAvailableAssignments] = useState([])
+  const [rejectedAssignments, setRejectedAssignments] = useState(new Set())
   const [otpValues, setOtpValues] = useState({})
   const [showOtpFor, setShowOtpFor] = useState({})
   const [messages, setMessages] = useState({})
   const [todayDeliveries, setTodayDeliveries] = useState({ totalDeliveries: 0, deliveries: [] })
-  const [deliveryCounts, setDeliveryCounts] = useState({ total: 0, month: 0 })
+  const [deliveryCounts, setDeliveryCounts] = useState({ total: 0, month: 0, today: 0, todayEarnings: 0 })
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterDay, setFilterDay] = useState('')
@@ -28,14 +29,14 @@ function DeliveryBoy() {
   const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)
 
   // Fetch assignments
-  const getAssignments = async () => {
+  const getAssignments = useCallback(async () => {
     try {
       const result = await orderAPI.getAssignments()
       setAvailableAssignments(result.data || [])
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [])
 
   // Toggle Active status
   const toggleActive = async () => {
@@ -54,14 +55,14 @@ function DeliveryBoy() {
   }
 
   // Current Orders
-  const getCurrentOrders = async () => {
+  const getCurrentOrders = useCallback(async () => {
     try {
       const { data } = await orderAPI.getCurrentOrders()
       setCurrentOrders(Array.isArray(data) ? data : [])
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [])
 
   const acceptOrder = async (assignmentId) => {
     try {
@@ -74,23 +75,27 @@ function DeliveryBoy() {
     }
   }
 
-  const handleTodayDeliveries = async () => {
+  const handleTodayDeliveries = useCallback(async () => {
     try {
       const result = await orderAPI.getTodayDeliveries()
       setTodayDeliveries(result.data)
     } catch (error) {
       console.log(error)
     }
+  }, [])
+
+  const rejectOrder = (assignmentId) => {
+    setRejectedAssignments(prev => new Set([...prev, assignmentId]))
   }
 
-  const handleDeliveryCounts = async () => {
+  const handleDeliveryCounts = useCallback(async () => {
     try {
       const result = await orderAPI.getDeliveryCounts()
-      setDeliveryCounts({ total: result.data?.total || 0, month: result.data?.month || 0 })
+      setDeliveryCounts(result.data)
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [])
 
   const handleFetchByMonth = useCallback(async () => {
     try {
@@ -101,7 +106,7 @@ function DeliveryBoy() {
     }
   }, [filterYear, filterMonth])
 
-  const handleFetchByDate = async () => {
+  const handleFetchByDate = useCallback(async () => {
     try {
       if (!filterDay) return
       const parts = filterDay.split('-')
@@ -113,7 +118,7 @@ function DeliveryBoy() {
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [filterDay])
 
   // Socket Events
   useEffect(() => {
@@ -194,7 +199,17 @@ function DeliveryBoy() {
     handleTodayDeliveries()
     handleDeliveryCounts()
     handleFetchByMonth()
-  }, [userData, handleFetchByMonth])
+  }, [userData, getAssignments, getCurrentOrders, handleTodayDeliveries, handleDeliveryCounts, handleFetchByMonth])
+
+  // Handle history filtering
+  useEffect(() => {
+    if (!userData) return;
+    if (filterDay) {
+      handleFetchByDate();
+    } else {
+      handleFetchByMonth();
+    }
+  }, [filterYear, filterMonth, filterDay, userData, handleFetchByMonth, handleFetchByDate]);
 
   if (!userData) return null;
 
@@ -210,6 +225,12 @@ function DeliveryBoy() {
           <p className="text-gray-600 mb-5">Manage your deliveries efficiently and earn more!</p>
 
           <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+            {userData.deliveryBoyId && (
+              <div className="flex items-center gap-2 bg-orange-100 px-4 py-2 rounded-full text-sm font-bold text-orange-600 border border-orange-200">
+                ID: {userData.deliveryBoyId}
+              </div>
+            )}
+
             <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium">
               <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
               {isActive ? 'Active' : 'Inactive'}
@@ -233,14 +254,21 @@ function DeliveryBoy() {
             <FaClipboardList className="text-orange-500 text-2xl" />
             <div>
               <p className="text-gray-600 text-sm">Available Orders</p>
-              <p className="text-xl font-semibold">{availableAssignments.length}</p>
+              <p className="text-xl font-semibold">{availableAssignments.filter(a => !rejectedAssignments.has(a.assignmentId)).length}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow p-5 flex items-center gap-3 border border-gray-100">
             <FaTruck className="text-green-500 text-2xl" />
             <div>
               <p className="text-gray-600 text-sm">Today's Deliveries</p>
-              <p className="text-xl font-semibold">{todayDeliveries.totalDeliveries || 0}</p>
+              <p className="text-xl font-semibold">{deliveryCounts.today || 0}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow p-5 flex items-center gap-3 border border-gray-100">
+            <FaMoneyBillWave className="text-emerald-500 text-2xl" />
+            <div>
+              <p className="text-gray-600 text-sm">Today's Earnings</p>
+              <p className="text-xl font-semibold">₹{Number(deliveryCounts.todayEarnings || 0).toFixed(2)}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow p-5 flex items-center gap-3 border border-gray-100">
@@ -248,13 +276,6 @@ function DeliveryBoy() {
             <div>
               <p className="text-gray-600 text-sm">Monthly Deliveries</p>
               <p className="text-xl font-semibold">{deliveryCounts.month}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-5 flex items-center gap-3 border border-gray-100">
-            <FaListAlt className="text-purple-500 text-2xl" />
-            <div>
-              <p className="text-gray-600 text-sm">Total Deliveries</p>
-              <p className="text-xl font-semibold">{deliveryCounts.total}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow p-5 flex items-center gap-3 border border-gray-100">
@@ -268,15 +289,23 @@ function DeliveryBoy() {
           </div>
         </div>
 
-        {/* --- Filter Section --- */}
+        {/* --- Filter Section (Delivery History) --- */}
         <div className="w-full bg-white rounded-2xl shadow border border-gray-100 p-6">
-          <h2 className="text-lg font-bold mb-4 text-[#ff4d2d]">Filter Deliveries</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-[#ff4d2d] flex items-center gap-2">
+              <FaListAlt /> Delivery History
+            </h2>
+            <div className="bg-orange-50 text-orange-600 px-4 py-1 rounded-full text-sm font-bold">
+              {filteredDeliveries.totalDeliveries || 0} Deliveries
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Year</label>
+              <label className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Year</label>
               <input
                 type="number"
-                className="border rounded-lg p-2"
+                className="border-2 border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:outline-none transition-all"
                 value={filterYear}
                 onChange={(e) => setFilterYear(Number(e.target.value))}
                 min="2000"
@@ -284,9 +313,9 @@ function DeliveryBoy() {
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Month</label>
+              <label className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Month</label>
               <select
-                className="border rounded-lg p-2"
+                className="border-2 border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:outline-none transition-all"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(Number(e.target.value))}
               >
@@ -296,69 +325,77 @@ function DeliveryBoy() {
               </select>
             </div>
             <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Pick a Date (optional)</label>
+              <label className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Specific Date (Optional)</label>
               <input
                 type="date"
-                className="border rounded-lg p-2"
+                className="border-2 border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:outline-none transition-all"
                 value={filterDay}
                 onChange={(e) => setFilterDay(e.target.value)}
               />
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleFetchByMonth}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
-            >
-              Fetch by Month
-            </button>
-            <button
-              onClick={handleFetchByDate}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
-              disabled={!filterDay}
-            >
-              Fetch by Date
-            </button>
-          </div>
 
-          <div className="mt-6">
-            <p className="text-sm text-gray-600">Results</p>
-            <p className="text-lg font-semibold">{filteredDeliveries.totalDeliveries} deliveries</p>
-            <div className="mt-3 space-y-3">
-              {filteredDeliveries.deliveries?.length ? (
-                filteredDeliveries.deliveries.map((order, idx) => (
-                  <div key={idx} className="border rounded-xl p-4 bg-gray-50">
-                    <p className="font-semibold text-sm">{order.shopOrders?.shop?.name || 'Shop'}</p>
-                    <p className="text-sm text-gray-600"><b>Delivery:</b> {order.deliveryAddress?.text || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Subtotal: ₹{order.shopOrders?.subtotal || order.totalAmount}</p>
-                    <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString()}</p>
+          <div className="space-y-4">
+            {filteredDeliveries.deliveries?.length ? (
+              filteredDeliveries.deliveries.map((d, i) => {
+                const so = d.shopOrders.find(s => s.assignedDeliveryBoy === userData._id)
+                return (
+                  <div key={i} className="border border-gray-100 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-bold text-gray-800">{so?.shop?.name || 'Restaurant'}</p>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        +₹{(so?.deliveryBoyShare || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p className="flex items-center gap-1">
+                          <FaCalendarAlt size={10} /> {new Date(d.createdAt).toLocaleDateString()} at {new Date(d.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p>Customer: {d.user?.fullName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-gray-700">₹{so?.subtotal || 0}</p>
+                        <p className="text-[10px] text-gray-400">Order Total</p>
+                      </div>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-400 text-sm">No deliveries in selected period</p>
-              )}
-            </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-10 bg-gray-50 rounded-xl">
+                <p className="text-gray-400 text-sm italic">No delivery records found for this period</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* --- Available Orders --- */}
         <div className="w-full bg-white rounded-2xl shadow border border-gray-100 p-6">
           <h2 className="text-lg font-bold mb-4 text-[#ff4d2d]">Available Orders</h2>
-          {availableAssignments?.length ? (
+          {availableAssignments?.filter(a => !rejectedAssignments.has(a.assignmentId)).length ? (
             <div className="space-y-3">
-              {availableAssignments.map((a, i) => (
+              {availableAssignments.filter(a => !rejectedAssignments.has(a.assignmentId)).map((a, i) => (
                 <div key={i} className="border rounded-xl p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-all">
                   <div>
                     <p className="font-semibold text-sm">{a.shopName}</p>
                     <p className="text-sm text-gray-600"><b>Delivery:</b> {a.deliveryAddress?.text || 'N/A'}</p>
                     <p className="text-xs text-gray-500">{a.items.length} items | ₹{a.subtotal}</p>
                   </div>
-                  <button
-                    onClick={() => acceptOrder(a.assignmentId)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
-                  >
-                    Accept
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => rejectOrder(a.assignmentId)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1"
+                    >
+                      <FaTimes size={12} /> Reject
+                    </button>
+                    <button
+                      onClick={() => acceptOrder(a.assignmentId)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
+                    >
+                      Accept
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -374,98 +411,120 @@ function DeliveryBoy() {
             currentOrders.map((co) => {
               const key = `${co.orderId}-${co.shopOrder._id}`
               return (
-                <div key={key} className="border rounded-xl p-5 mb-4 bg-gray-50">
-                  <p className="font-semibold">{co.shopOrder.shop.name}</p>
-                  <p className="text-sm text-gray-600">{co.deliveryAddress?.text || 'Address not available'}</p>
-                  <p className="text-xs text-gray-500 mb-2">{co.shopOrder.shopOrderItems.length} items | ₹{co.shopOrder.subtotal}</p>
+                <div key={key} className="border rounded-xl p-5 mb-4 bg-gray-50 border-orange-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="font-bold text-lg text-gray-800">{co.shopOrder.shop.name}</p>
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <FaTruck className="text-orange-400" /> {co.shopOrder.status}
+                      </p>
+                    </div>
+                    <div className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Active Delivery
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">Customer:</span> {co.user.fullName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">Address:</span> {co.deliveryAddress?.text || 'Address not available'}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>{co.shopOrder.shopOrderItems.length} items</span>
+                      <span>|</span>
+                      <span className="font-bold text-gray-700 text-sm">₹{co.shopOrder.subtotal}</span>
+                    </div>
+                  </div>
 
                   {/* Payment */}
-                  <div className="mt-3 p-3 bg-orange-50 rounded-lg border">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-semibold text-orange-800">Collect via UPI</p>
-                        <p className="text-xs text-orange-700">Amount: ₹{upiByKey[key]?.amount || co.shopOrder.subtotal}</p>
-                      </div>
-                      {upiByKey[key]?.link ? (
-                        isMobile ? (
-                          <a href={upiByKey[key].link} target="_blank" rel="noreferrer" className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-semibold">Open UPI</a>
-                        ) : (
-                          <button
-                            onClick={() => navigator.clipboard.writeText(upiByKey[key].link)}
-                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-semibold"
-                          >
-                            Copy Link
-                          </button>
-                        )
-                      ) : (
-                        <span className="text-xs text-red-600">UPI not configured</span>
-                      )}
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500 font-medium">Payment Method:</span>
+                      <span className="font-semibold uppercase text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
+                        {co.paymentMethod === "online" ? "Online" : "Cash on Delivery"}
+                      </span>
                     </div>
-
-                    {!isMobile && upiByKey[key]?.link && (
-                      <div className="mt-3 flex justify-end">
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiByKey[key].link)}`}
-                          alt="QR"
-                          className="rounded-lg border"
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {/* OTP Section */}
-                  {!showOtpFor[key] ? (
-                    <button
-                      onClick={() => setShowOtpFor(prev => ({ ...prev, [key]: true }))}
-                      disabled={loading}
-                      className="mt-4 w-full bg-green-500 text-white font-semibold py-2 rounded-xl shadow hover:bg-green-600 transition-all"
-                    >
-                      {loading ? <ClipLoader size={20} color="white" /> : 'Mark as Delivered'}
-                    </button>
-                  ) : (
-                    <div className="mt-4 p-4 bg-white border rounded-lg">
-                      <p className="text-sm font-semibold mb-2">Enter OTP for <span className="text-orange-500">{co.user.fullName}</span></p>
-                      <input
-                        type="text"
-                        placeholder="Enter OTP"
-                        className="w-full border px-3 py-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                        value={otpValues[key] || ''}
-                        onChange={(e) => setOtpValues(prev => ({ ...prev, [key]: e.target.value }))}
-                      />
-                      {messages[key] && <p className="text-center text-green-600 mb-3">{messages[key]}</p>}
+                  <div className="mt-5">
+                    {!showOtpFor[key] ? (
                       <button
-                        className="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600"
-                        onClick={async () => {
-                          const otp = (otpValues[key] || '').trim()
-                          if (!otp || otp.length !== 4) {
-                            setMessages(prev => ({ ...prev, [key]: 'Please enter a valid 4-digit OTP' }))
-                            return
-                          }
-                          try {
-                            setLoading(true)
-                            const res = await orderAPI.verifyDeliveryOtp(co.orderId, co.shopOrder._id, otp)
-                            setMessages(prev => ({ ...prev, [key]: res.data.message }))
-                            setCurrentOrders(prev => prev.filter(o => `${o.orderId}-${o.shopOrder._id}` !== key))
-                            await getAssignments()
-                            await handleTodayDeliveries()
-                            await handleDeliveryCounts()
-                            await handleFetchByMonth()
-                          } catch (error) {
-                            setMessages(prev => ({ ...prev, [key]: error.response?.data?.message || 'Failed to verify OTP' }))
-                          } finally {
-                            setLoading(false)
-                          }
-                        }}
+                        onClick={() => setShowOtpFor(prev => ({ ...prev, [key]: true }))}
+                        disabled={loading}
+                        className="w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-2"
                       >
-                        Submit OTP
+                        {loading ? <ClipLoader size={20} color="white" /> : (
+                          <>
+                            <FaRegSmile /> Complete Delivery
+                          </>
+                        )}
                       </button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="p-4 bg-white border-2 border-green-100 rounded-xl shadow-inner">
+                        <p className="text-sm font-bold text-gray-700 mb-3">
+                          Enter OTP for <span className="text-orange-500">{co.user.fullName}</span>
+                        </p>
+                        <div className="flex gap-2 mb-3">
+                          <input
+                            type="text"
+                            placeholder="Enter 4-digit OTP"
+                            className="flex-1 border-2 border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-center tracking-widest text-lg"
+                            maxLength={4}
+                            value={otpValues[key] || ''}
+                            onChange={(e) => setOtpValues(prev => ({ ...prev, [key]: e.target.value }))}
+                          />
+                          <button
+                            className="bg-gray-200 text-gray-600 px-3 rounded-lg hover:bg-gray-300 transition-colors"
+                            onClick={() => setShowOtpFor(prev => ({ ...prev, [key]: false }))}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {messages[key] && <p className="text-center text-green-600 text-xs font-bold mb-3">{messages[key]}</p>}
+                        <button
+                          className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold hover:bg-orange-600 shadow-md transition-all active:scale-95"
+                          onClick={async () => {
+                            const otp = (otpValues[key] || '').trim()
+                            if (!otp || otp.length !== 4) {
+                              alert('Please enter a valid 4-digit OTP')
+                              return
+                            }
+                            setLoading(true)
+                            try {
+                              const res = await orderAPI.verifyDeliveryOtp(
+                                co.orderId,
+                                co.shopOrder._id,
+                                otp
+                              )
+                              setMessages(prev => ({ ...prev, [key]: 'Delivery Verified!' }))
+                              setTimeout(() => {
+                                getCurrentOrders()
+                                handleTodayDeliveries()
+                                handleDeliveryCounts()
+                              }, 1500)
+                            } catch (err) {
+                              alert(err.response?.data?.message || 'OTP Verification Failed')
+                            } finally {
+                              setLoading(false)
+                            }
+                          }}
+                        >
+                          Verify & Deliver
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })
           ) : (
-            <p className="text-sm text-gray-500">No current orders</p>
+            <div className="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+              <FaTruck className="mx-auto text-gray-300 text-4xl mb-2" />
+              <p className="text-gray-400 font-medium">No active deliveries at the moment</p>
+            </div>
           )}
         </div>
       </div>

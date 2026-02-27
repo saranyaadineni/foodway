@@ -1181,13 +1181,23 @@ export const getDeliveryCounts = async (req, res) => {
             createdAt: { $gte: startOfMonth, $lt: now }
         })
 
-        const today = await Order.countDocuments({
+        const todayDeliveries = await Order.find({
             "shopOrders.assignedDeliveryBoy": userId,
             "shopOrders.status": "delivered",
             createdAt: { $gte: startOfToday, $lt: now }
         })
 
-        return res.status(200).json({ total, month, today })
+        const today = todayDeliveries.length
+        let todayEarnings = 0
+        todayDeliveries.forEach(order => {
+            order.shopOrders.forEach(so => {
+                if (so.assignedDeliveryBoy && so.assignedDeliveryBoy.toString() === userId && so.status === "delivered") {
+                    todayEarnings += (so.deliveryBoyShare || 0)
+                }
+            })
+        })
+
+        return res.status(200).json({ total, month, today, todayEarnings })
     } catch (error) {
         return res.status(500).json({ message: `get delivery counts error ${error}` })
     }

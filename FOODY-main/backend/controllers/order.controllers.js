@@ -81,14 +81,20 @@ export const placeOrder = async (req, res) => {
             const round2 = (n) => Math.round(n * 100) / 100
             // Revenue split based on subtotal; extras added, not deducted from item price
             const ownerShare = round2(subtotal * 0.70)            // Restaurant
-            const deliveryBoyShare = round2(subtotal * 0.20)      // Delivery Partner
+            const deliveryBoyShare = orderType === "delivery" ? round2(subtotal * 0.20) : 0      // Delivery Partner (0 for pickup)
             const superadminFee = round2(subtotal * 0.08)         // Platform (You)
             const paymentFee = round2(subtotal * 0.02)            // Payment/Tax
+            const shopOrderTotal = round2(subtotal + deliveryBoyShare + superadminFee + paymentFee)
             return {
                 shop: shop._id,
                 owner: shop.owner._id,
                 status: "pending",
                 subtotal,
+                itemsTotal: subtotal,
+                deliveryFee: deliveryBoyShare,
+                platformFee: superadminFee,
+                tax: paymentFee,
+                totalAmount: shopOrderTotal,
                 ownerShare,
                 deliveryBoyShare,
                 superadminFee,
@@ -113,16 +119,25 @@ export const placeOrder = async (req, res) => {
                 const round2 = (n) => Math.round(n * 100) / 100
                 // Compute order-level shares from subtotal, not grand total
                 const orderSubtotal = shopOrders.reduce((sum, so) => sum + (so.subtotal || 0), 0)
+                const orderItemsTotal = round2(orderSubtotal)
+                const orderDeliveryFee = shopOrders.reduce((sum, so) => sum + (so.deliveryFee || 0), 0)
+                const orderPlatformFee = shopOrders.reduce((sum, so) => sum + (so.platformFee || 0), 0)
+                const orderTax = shopOrders.reduce((sum, so) => sum + (so.tax || 0), 0)
+                const calculatedTotalAmount = round2(orderItemsTotal + orderDeliveryFee + orderPlatformFee + orderTax)
                 const newOrder = await Order.create({
                     user: req.userId,
                     paymentMethod,
                     deliveryAddress: orderType === "delivery" ? deliveryAddress : null,
                     orderType: orderType || "delivery",
-                    totalAmount,
+                    totalAmount: calculatedTotalAmount,
+                    itemsTotal: orderItemsTotal,
+                    deliveryFee: orderDeliveryFee,
+                    platformFee: orderPlatformFee,
+                    tax: orderTax,
                     ownerShare: round2(orderSubtotal * 0.70),
-                    deliveryBoyShare: round2(orderSubtotal * 0.20),
-                    superadminFee: round2(orderSubtotal * 0.08),
-                    paymentFee: round2(orderSubtotal * 0.02),
+                    deliveryBoyShare: orderDeliveryFee,
+                    superadminFee: orderPlatformFee,
+                    paymentFee: orderTax,
                     shopOrders,
                     razorpayOrderId: razorOrder.id,
                     payment: false
@@ -137,16 +152,25 @@ export const placeOrder = async (req, res) => {
             const round2 = (n) => Math.round(n * 100) / 100
             // Compute order-level shares from subtotal, not grand total
             const orderSubtotal = shopOrders.reduce((sum, so) => sum + (so.subtotal || 0), 0)
+            const orderItemsTotal = round2(orderSubtotal)
+            const orderDeliveryFee = shopOrders.reduce((sum, so) => sum + (so.deliveryFee || 0), 0)
+            const orderPlatformFee = shopOrders.reduce((sum, so) => sum + (so.platformFee || 0), 0)
+            const orderTax = shopOrders.reduce((sum, so) => sum + (so.tax || 0), 0)
+            const calculatedTotalAmount = round2(orderItemsTotal + orderDeliveryFee + orderPlatformFee + orderTax)
             const newOrder = await Order.create({
                 user: req.userId,
                 paymentMethod,
                 deliveryAddress: orderType === "delivery" ? deliveryAddress : null,
                 orderType: orderType || "delivery",
-                totalAmount,
+                totalAmount: calculatedTotalAmount,
+                itemsTotal: orderItemsTotal,
+                deliveryFee: orderDeliveryFee,
+                platformFee: orderPlatformFee,
+                tax: orderTax,
                 ownerShare: round2(orderSubtotal * 0.70),
-                deliveryBoyShare: round2(orderSubtotal * 0.20),
-                superadminFee: round2(orderSubtotal * 0.08),
-                paymentFee: round2(orderSubtotal * 0.02),
+                deliveryBoyShare: orderDeliveryFee,
+                superadminFee: orderPlatformFee,
+                paymentFee: orderTax,
                 shopOrders,
                 payment: false
             })
@@ -182,16 +206,25 @@ export const placeOrder = async (req, res) => {
         const round2 = (n) => Math.round(n * 100) / 100
         // Compute order-level shares from subtotal, not grand total
         const orderSubtotal = shopOrders.reduce((sum, so) => sum + (so.subtotal || 0), 0)
+        const orderItemsTotal = round2(orderSubtotal)
+        const orderDeliveryFee = shopOrders.reduce((sum, so) => sum + (so.deliveryFee || 0), 0)
+        const orderPlatformFee = shopOrders.reduce((sum, so) => sum + (so.platformFee || 0), 0)
+        const orderTax = shopOrders.reduce((sum, so) => sum + (so.tax || 0), 0)
+        const calculatedTotalAmount = round2(orderItemsTotal + orderDeliveryFee + orderPlatformFee + orderTax)
         const newOrder = await Order.create({
             user: req.userId,
             paymentMethod,
             deliveryAddress: orderType === "delivery" ? deliveryAddress : null,
             orderType: orderType || "delivery",
-            totalAmount,
+            totalAmount: calculatedTotalAmount,
+            itemsTotal: orderItemsTotal,
+            deliveryFee: orderDeliveryFee,
+            platformFee: orderPlatformFee,
+            tax: orderTax,
             ownerShare: round2(orderSubtotal * 0.70),
-            deliveryBoyShare: round2(orderSubtotal * 0.20),
-            superadminFee: round2(orderSubtotal * 0.08),
-            paymentFee: round2(orderSubtotal * 0.02),
+            deliveryBoyShare: orderDeliveryFee,
+            superadminFee: orderPlatformFee,
+            paymentFee: orderTax,
             shopOrders
         })
 
@@ -500,7 +533,12 @@ export const updateOrderStatus = async (req, res) => {
                 receiptNumber,
                 generatedAt: new Date(),
                 items: (shopOrder.shopOrderItems || []).map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
-                subtotal: shopOrder.subtotal || 0
+                subtotal: shopOrder.subtotal || 0,
+                itemsTotal: shopOrder.itemsTotal || 0,
+                deliveryFee: shopOrder.deliveryFee || 0,
+                platformFee: shopOrder.platformFee || 0,
+                tax: shopOrder.tax || 0,
+                totalAmount: shopOrder.totalAmount || 0
             }
             }
         }
@@ -598,10 +636,18 @@ export const updateOrderStatus = async (req, res) => {
         // Mark shopOrders as modified to ensure subdocument changes are saved
         order.markModified('shopOrders')
         await order.save()
-        const updatedShopOrder = order.shopOrders.find(o => o.shop == shopId)
+        
+        // Find the updated shop order BEFORE population to ensure correct ID comparison
+        const shopOrderInDb = order.shopOrders.find(o => String(o.shop) === String(shopId))
+        
         await order.populate("shopOrders.shop", "name")
         await order.populate("shopOrders.assignedDeliveryBoy", "fullName email mobile")
         await order.populate("user", "socketId")
+
+        const updatedShopOrder = order.shopOrders.find(o => {
+            const currentShopId = o.shop?._id || o.shop;
+            return String(currentShopId) === String(shopId);
+        })
 
         const io = req.app.get('io')
         if (io) {

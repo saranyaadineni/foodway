@@ -44,7 +44,12 @@ function UserOrderCard({ data }) {
               </tr>
             `).join('')
 
-            const total = shopOrder.subtotal || items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0)
+            const calculatedSubtotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0)
+            const itemsTotal = shopOrder.itemsTotal || shopOrder.subtotal || calculatedSubtotal
+            const deliveryFee = shopOrder.deliveryFee || 0
+            const platformFee = shopOrder.platformFee || 0
+            const tax = shopOrder.tax || 0
+            const grandTotal = shopOrder.totalAmount || (Number(itemsTotal) + Number(deliveryFee) + Number(platformFee) + Number(tax))
             const receiptNumber = shopOrder.receipt?.receiptNumber || `R-${data.orderId || data._id.slice(-6)}`
 
             win.document.write(`
@@ -80,7 +85,11 @@ function UserOrderCard({ data }) {
                 </table>
 
                 <div style="text-align:right;font-size:14px;margin-top:8px;">
-                  <p style="margin:0;"><strong>Subtotal:</strong> ₹${total}</p>
+                  <p style="margin:0;"><strong>Items Total:</strong> ₹${itemsTotal}</p>
+                  ${deliveryFee > 0 ? `<p style="margin:0;"><strong>Delivery Fee:</strong> ₹${deliveryFee}</p>` : ''}
+                  ${platformFee > 0 ? `<p style="margin:0;"><strong>Platform Fee:</strong> ₹${platformFee}</p>` : ''}
+                  ${tax > 0 ? `<p style="margin:0;"><strong>Tax:</strong> ₹${tax}</p>` : ''}
+                  <p style="margin:8px 0 0 0;font-size:16px;"><strong>Grand Total:</strong> ₹${grandTotal}</p>
                 </div>
 
                 <p style="margin-top:24px;font-size:12px;color:#6b7280;">Thank you for ordering with FoodWay.</p>
@@ -284,11 +293,35 @@ function UserOrderCard({ data }) {
                             </div>
                         ))}
                     </div>
-                    <div className='flex justify-between items-center border-t pt-2'>
-                        <p className='font-semibold'>Subtotal: {shopOrder.subtotal}</p>
-                        <span className='text-sm font-medium text-blue-600'>
-                            {data.isCancelled ? 'cancelled' : shopOrder.status}
-                        </span>
+                    <div className='flex flex-col border-t pt-2 space-y-1'>
+                        <div className='flex justify-between text-sm text-gray-600'>
+                            <span>Items Total:</span>
+                            <span>₹{shopOrder.itemsTotal || shopOrder.subtotal}</span>
+                        </div>
+                        {shopOrder.deliveryFee > 0 && (
+                            <div className='flex justify-between text-sm text-gray-600'>
+                                <span>Delivery Fee:</span>
+                                <span>₹{shopOrder.deliveryFee}</span>
+                            </div>
+                        )}
+                        {shopOrder.platformFee > 0 && (
+                            <div className='flex justify-between text-sm text-gray-600'>
+                                <span>Platform Fee:</span>
+                                <span>₹{shopOrder.platformFee}</span>
+                            </div>
+                        )}
+                        {shopOrder.tax > 0 && (
+                            <div className='flex justify-between text-sm text-gray-600'>
+                                <span>Tax:</span>
+                                <span>₹{shopOrder.tax}</span>
+                            </div>
+                        )}
+                        <div className='flex justify-between items-center pt-1'>
+                            <p className='font-bold text-gray-900'>Total: ₹{shopOrder.totalAmount || (Number(shopOrder.itemsTotal || shopOrder.subtotal || 0) + Number(shopOrder.deliveryFee || 0) + Number(shopOrder.platformFee || 0) + Number(shopOrder.tax || 0))}</p>
+                            <span className='text-sm font-medium text-blue-600'>
+                                {data.isCancelled ? 'cancelled' : shopOrder.status}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Receipt Details for User */}
@@ -362,44 +395,47 @@ function UserOrderCard({ data }) {
                         </div>
                     )}
                     
-                    {/* OTP for Out of Delivery Status */}
-                    {shopOrder.status === "out of delivery" && shopOrder.deliveryOtp && (
-                        <div className='mt-3 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-400 rounded-lg'>
-                            <div className='flex items-center justify-between'>
-                                <div>
-                                    <h4 className='text-lg font-bold text-orange-800 mb-1'>🔐 Delivery OTP</h4>
-                                    <p className='text-sm text-orange-600 mb-2'>Share this OTP with your delivery person</p>
-                                </div>
-                                <div className='text-right'>
-                                    <div className='bg-white px-4 py-2 rounded-lg border-2 border-orange-300 shadow-sm'>
-                                        <span className='text-2xl font-bold text-orange-800 tracking-wider'>{shopOrder.deliveryOtp}</span>
+                    {/* OTP Section - Show if out of delivery OR if OTP exists */}
+                    {(shopOrder.status === "out of delivery" || shopOrder.deliveryOtp) && (
+                        <div className='mt-3'>
+                            {shopOrder.deliveryOtp ? (
+                                <div className='p-4 bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-400 rounded-lg shadow-sm'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <h4 className='text-lg font-bold text-orange-800 mb-1'>🔐 Delivery OTP</h4>
+                                            <p className='text-sm text-orange-600 mb-2'>Share this OTP with your delivery person</p>
+                                        </div>
+                                        <div className='text-right'>
+                                            <div className='bg-white px-4 py-2 rounded-lg border-2 border-orange-300 shadow-sm'>
+                                                <span className='text-2xl font-bold text-orange-800 tracking-wider'>{shopOrder.deliveryOtp}</span>
+                                            </div>
+                                            {shopOrder.otpExpires && (
+                                                <p className='text-[10px] text-orange-500 mt-1'>
+                                                    Expires: {new Date(shopOrder.otpExpires).toLocaleString()}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    {shopOrder.otpExpires && (
-                                        <p className='text-xs text-orange-500 mt-1'>
-                                            Expires: {new Date(shopOrder.otpExpires).toLocaleString()}
-                                        </p>
+                                </div>
+                            ) : (
+                                <div className='p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg shadow-sm'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <h4 className='text-lg font-bold text-orange-800 mb-1'>Generate Delivery OTP</h4>
+                                            <p className='text-sm text-orange-600'>Tap to generate and share with delivery person</p>
+                                        </div>
+                                        <button 
+                                            className='bg-orange-500 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 disabled:opacity-50 transition-all active:scale-95'
+                                            onClick={() => handleGenerateOtp(shopOrder._id)}
+                                            disabled={otpLoading}
+                                        >
+                                            {otpLoading ? <ClipLoader size={20} color='white' /> : 'Generate OTP'}
+                                        </button>
+                                    </div>
+                                    {otpMessage && (
+                                        <p className='text-xs text-orange-700 mt-2 font-medium'>{otpMessage}</p>
                                     )}
                                 </div>
-                            </div>
-                        </div>
-                    )}
-                    {shopOrder.status === "out of delivery" && !shopOrder.deliveryOtp && (
-                        <div className='mt-3 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg'>
-                            <div className='flex items-center justify-between'>
-                                <div>
-                                    <h4 className='text-lg font-bold text-orange-800 mb-1'>Generate Delivery OTP</h4>
-                                    <p className='text-sm text-orange-600'>Tap to generate and share with delivery person</p>
-                                </div>
-                                <button 
-                                    className='bg-orange-500 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 disabled:opacity-50'
-                                    onClick={() => handleGenerateOtp(shopOrder._id)}
-                                    disabled={otpLoading}
-                                >
-                                    {otpLoading ? <ClipLoader size={20} color='white' /> : 'Generate OTP'}
-                                </button>
-                            </div>
-                            {otpMessage && (
-                                <p className='text-sm text-orange-700 mt-2'>{otpMessage}</p>
                             )}
                         </div>
                     )}

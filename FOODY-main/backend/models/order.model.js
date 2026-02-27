@@ -39,6 +39,12 @@ const shopOrderSchema = new mongoose.Schema({
         ref: "User"
     },
     subtotal: Number,
+    // New breakdown fields
+    itemsTotal: { type: Number, default: 0 },
+    deliveryFee: { type: Number, default: 0 },
+    platformFee: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 },
+    totalAmount: { type: Number, default: 0 },
     // Revenue split fields computed at order placement
     ownerShare: { type: Number, default: 0 },
     deliveryBoyShare: { type: Number, default: 0 },
@@ -54,7 +60,12 @@ const shopOrderSchema = new mongoose.Schema({
     receiptNumber: { type: String, default: null },
     generatedAt: { type: Date, default: null },
     items: [{ name: String, price: Number, quantity: Number }],
-    subtotal: { type: Number, default: null }
+    subtotal: { type: Number, default: null },
+    itemsTotal: { type: Number, default: 0 },
+    deliveryFee: { type: Number, default: 0 },
+    platformFee: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 },
+    totalAmount: { type: Number, default: 0 }
   },
   assignment:{
      type: mongoose.Schema.Types.ObjectId,
@@ -113,8 +124,12 @@ const orderSchema = new mongoose.Schema({
     },
     totalAmount: {
         type: Number
-    }
-    ,
+    },
+    // New breakdown fields
+    itemsTotal: { type: Number, default: 0 },
+    deliveryFee: { type: Number, default: 0 },
+    platformFee: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 },
     // Order-level revenue split fields based on totalAmount
     ownerShare: { type: Number, default: 0 },
     deliveryBoyShare: { type: Number, default: 0 },

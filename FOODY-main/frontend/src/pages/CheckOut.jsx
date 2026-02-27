@@ -32,11 +32,11 @@ function CheckOut() {
   }, [itemsInMyCity, dispatch])
   // Fee breakdown per your specification
   const round2 = (n) => Math.round(n * 100) / 100
-  const ownerShare = round2(totalAmount)
-  const deliveryBoyShare = orderType === "delivery" ? round2(totalAmount * 0.10) : 0
-
-  const paymentFee = paymentMethod === "online" ? round2(totalAmount * 0.02) : 0
-  const grandTotal = round2(ownerShare + deliveryBoyShare + paymentFee)
+  const itemsTotal = round2(totalAmount)
+  const deliveryFee = orderType === "delivery" ? round2(itemsTotal * 0.20) : 0
+  const platformFee = round2(itemsTotal * 0.08)
+  const tax = round2(itemsTotal * 0.02)
+  const grandTotal = round2(itemsTotal + deliveryFee + platformFee + tax)
 
   // Fetch shop UPI details (assumes single-shop cart; uses first item's shop)
   const [shopUpi, setShopUpi] = useState({ vpa: null, payeeName: null })
@@ -332,19 +332,22 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
 ))}
  <hr className='border-gray-200 my-2'/>
 <div className='flex justify-between font-medium text-gray-800'>
-  <span>Subtotal (Restaurant)</span>
-  <span>{ownerShare}</span>
+  <span>Items Total</span>
+  <span>{itemsTotal}</span>
 </div>
 {orderType === "delivery" && (
   <div className='flex justify-between text-gray-700'>
-    <span>Delivery Partner (10%)</span>
-    <span>{deliveryBoyShare}</span>
+    <span>Delivery Partner (20%)</span>
+    <span>{deliveryFee}</span>
   </div>
 )}
-
 <div className='flex justify-between text-gray-700'>
-  <span>Payment/Tax (2%) {paymentMethod!=="online" && "- COD"}</span>
-  <span>{paymentFee}</span>
+  <span>Platform Fee (8%)</span>
+  <span>{platformFee}</span>
+</div>
+<div className='flex justify-between text-gray-700'>
+  <span>Tax (2%)</span>
+  <span>{tax}</span>
 </div>
 <div className='flex justify-between text-lg font-bold text-[#ff4d2d] pt-2'>
     <span>Total</span>

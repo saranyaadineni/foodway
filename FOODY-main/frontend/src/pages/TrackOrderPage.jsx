@@ -34,7 +34,13 @@ function TrackOrderPage() {
          <div>
             <p className='text-lg font-bold mb-2 text-[#ff4d2d]'>{shopOrder.shop.name}</p>
             <p className='font-semibold'><span>Items:</span> {shopOrder.shopOrderItems?.map(i=>i.name).join(",")}</p>
-            <p><span className='font-semibold'>Subtotal:</span> {shopOrder.subtotal}</p>
+            <div className='mt-2 space-y-1 text-sm'>
+                <p><span className='font-semibold text-gray-700'>Items Total:</span> ₹{shopOrder.itemsTotal || shopOrder.subtotal}</p>
+                {shopOrder.deliveryFee > 0 && <p><span className='font-semibold text-gray-700'>Delivery Fee:</span> ₹{shopOrder.deliveryFee}</p>}
+                {shopOrder.platformFee > 0 && <p><span className='font-semibold text-gray-700'>Platform Fee:</span> ₹{shopOrder.platformFee}</p>}
+                {shopOrder.tax > 0 && <p><span className='font-semibold text-gray-700'>Tax:</span> ₹{shopOrder.tax}</p>}
+                <p className='text-lg font-bold border-t border-gray-100 pt-1 mt-1 text-gray-900'>Total: ₹{shopOrder.totalAmount || (Number(shopOrder.itemsTotal || shopOrder.subtotal || 0) + Number(shopOrder.deliveryFee || 0) + Number(shopOrder.platformFee || 0) + Number(shopOrder.tax || 0))}</p>
+            </div>
             <p className='mt-6'><span className='font-semibold'>Delivery address:</span> {currentOrder.deliveryAddress?.text}</p>
          </div>
          {shopOrder.status!="delivered"?<>

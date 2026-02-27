@@ -15,8 +15,9 @@ function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
     const updateStatus = async (status) => {
         setLoading(true)
         try {
-            await orderAPI.updateOrderStatus(data._id, data.shopOrders.shop._id, status)
-            dispatch(updateOrderStatus({ orderId: data._id, status }))
+            const shopId = data.shopOrders.shop?._id || data.shopOrders.shop;
+            await orderAPI.updateOrderStatus(data._id, shopId, status)
+            dispatch(updateOrderStatus({ orderId: data._id, status, shopId }))
             if (onOrderUpdate) {
                 onOrderUpdate()
             }

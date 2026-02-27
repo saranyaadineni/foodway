@@ -215,11 +215,20 @@ const userSlice = createSlice({
     },
 
     updateOrderStatus: (state, action) => {
-      const { orderId, status } = action.payload;
-      const order = state.myOrders.find(
-        (o) => o._id === orderId
-      );
-      if (order) order.status = status;
+      const { orderId, status, shopId } = action.payload;
+      const order = state.myOrders.find((o) => o._id === orderId);
+      if (order) {
+        order.status = status;
+        
+        // Update shop-specific status if shopId is provided
+        if (shopId && order.shopOrders) {
+          const shopOrder = order.shopOrders.find(so => {
+            const currentShopId = so.shop?._id || so.shop;
+            return String(currentShopId) === String(shopId);
+          });
+          if (shopOrder) shopOrder.status = status;
+        }
+      }
     },
 
     updateRealtimeOrderStatus: (state, action) => {
@@ -229,17 +238,23 @@ const userSlice = createSlice({
         // Update main status
         order.status = status;
         
-        // Update shop-specific status if it exists
+        // Update shop-specific status and OTP if it exists
         if (order.shopOrders) {
-          const shopOrder = order.shopOrders.find(so => 
-            so.shop?._id === shopId || so.shop === shopId
-          );
+          const shopOrder = order.shopOrders.find(so => {
+            const currentShopId = so.shop?._id || so.shop;
+            return String(currentShopId) === String(shopId);
+          });
+          
           if (shopOrder) {
             shopOrder.status = status;
+            if (deliveryOtp) {
+              shopOrder.deliveryOtp = deliveryOtp;
+              shopOrder.otpExpires = otpExpires;
+            }
           }
         }
 
-        // Update delivery OTP if provided
+        // Also update top-level for backward compatibility or if needed
         if (deliveryOtp) {
           order.deliveryOtp = deliveryOtp;
           order.otpExpires = otpExpires;

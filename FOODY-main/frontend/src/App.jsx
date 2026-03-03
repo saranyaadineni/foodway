@@ -17,6 +17,7 @@ import OrderPlaced from "./pages/OrderPlaced";
 import MyOrders from "./pages/MyOrders";
 import TrackOrderPage from "./pages/TrackOrderPage";
 import Shop from "./pages/Shop";
+import CategoryResults from "./pages/CategoryResults";
 import Help from "./pages/Help";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -187,11 +188,8 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/shop/:shopId" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <Shop />
-          </ProtectedRoute>
-        } />
+        <Route path="/shop/:shopId" element={<Shop />} />
+        <Route path="/collection/:categoryName" element={<CategoryResults />} />
 
         {/* 👑 Super Admin */}
         <Route path="/superadmin" element={

@@ -73,6 +73,13 @@ function UserDashboard() {
     fetchItems();
   }, [fetchItems]);
 
+  const topRatedItems = useMemo(() => {
+    return [...itemsInMyCity]
+      .filter(item => (item.rating?.average || 0) > 0)
+      .sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0))
+      .slice(0, 8);
+  }, [itemsInMyCity]);
+
   /* =====================
      FILTERED ITEMS
   ===================== */
@@ -246,7 +253,7 @@ function UserDashboard() {
               name={cat.name}
               image={cat.image}
               onClick={() =>
-                setSelectedCategory(cat.name)
+                navigate(`/collection/${cat.name}`)
               }
             />
           ))}
@@ -313,28 +320,30 @@ function UserDashboard() {
         </div>
       </section>
 
-      {/* ---------------- ITEMS ---------------- */}
+      {/* ---------------- TOP RATED ITEMS ---------------- */}
       <section className="max-w-6xl mx-auto p-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          Suggested Food Items
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Top Rated Food Items
+          </h2>
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-200 uppercase tracking-wider">
+            Best Choices
+          </span>
+        </div>
 
-        <div className="flex flex-wrap gap-8 justify-center sm:justify-start">
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center sm:justify-items-start">
+          {topRatedItems.length > 0 ? (
+            topRatedItems.map((item) => (
               <FoodCard key={item._id} data={item} />
             ))
           ) : (
-            <div className="w-full text-center py-10">
-              <p className="text-gray-500">
-                {selectedCategory === "All"
-                  ? "Loading delicious items for you..."
-                  : `No items found in "${selectedCategory}"`}
-              </p>
+            <div className="w-full text-center py-10 col-span-full">
+              <p className="text-gray-500">Loading top rated items for you...</p>
             </div>
           )}
         </div>
       </section>
+
     </div>
   );
 }

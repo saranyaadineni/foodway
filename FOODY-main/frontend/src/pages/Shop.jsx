@@ -13,7 +13,8 @@ import Nav from '../components/Nav.jsx';
 function Shop() {
     const {shopId}=useParams()
     const [items,setItems]=useState([])
-    const [shop,setShop]=useState([])
+    const [shop,setShop]=useState(null)
+    const [loading, setLoading] = useState(true)
     const [shopClosed, setShopClosed] = useState(false)
     const navigate=useNavigate()
     const { socket } = useSelector(state => state.user)
@@ -22,6 +23,7 @@ function Shop() {
     const [showFilters, setShowFilters] = useState(false)
     
     const handleShop = useCallback(async () => {
+        setLoading(true)
         try {
            const result = await itemAPI.getByShop(shopId)
            setShop(result.data.shop)
@@ -29,6 +31,8 @@ function Shop() {
            setShopClosed(!result.data.shop.isOpen)
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
         }
     }, [shopId])
 
@@ -90,6 +94,37 @@ function Shop() {
         }
         return arr
     }, [items, sortBy, filterFoodType])
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-gray-50'>
+        <Nav />
+        <div className='flex items-center justify-center h-[calc(100vh-80px)]'>
+          <div className='flex flex-col items-center gap-4'>
+            <div className='w-12 h-12 border-4 border-[#ff4d2d] border-t-transparent rounded-full animate-spin'></div>
+            <p className='text-gray-500 font-medium'>Loading shop details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!shop && !loading) {
+    return (
+      <div className='min-h-screen bg-gray-50'>
+        <Nav />
+        <div className='flex items-center justify-center h-[calc(100vh-80px)] text-center px-4'>
+          <div>
+            <h2 className='text-2xl font-bold text-gray-800 mb-2'>Shop Not Found</h2>
+            <p className='text-gray-500 mb-6'>We couldn't find the shop you're looking for.</p>
+            <button onClick={() => navigate('/')} className='bg-[#ff4d2d] text-white px-6 py-2 rounded-lg hover:bg-[#e64528] transition'>
+              Go Back Home
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className='min-h-screen bg-gray-50'>
         <Nav />

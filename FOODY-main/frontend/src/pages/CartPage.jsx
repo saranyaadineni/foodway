@@ -93,7 +93,7 @@ function CartPage() {
                             <FiHelpCircle size={18} />
                             <span>Help</span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium text-sm" onClick={() => setAuthState('login')}>
+                        <div className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium text-sm" onClick={() => navigate('/signin')}>
                             <FiUser size={18} />
                             <span>Sign In</span>
                         </div>
@@ -150,7 +150,7 @@ function CartPage() {
                             <span>{userData?.fullName?.split(' ')[0]}</span>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium text-sm" onClick={() => setAuthState('login')}>
+                        <div className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium text-sm" onClick={() => navigate('/signin')}>
                             <FiUser size={18} />
                             <span>Sign In</span>
                         </div>

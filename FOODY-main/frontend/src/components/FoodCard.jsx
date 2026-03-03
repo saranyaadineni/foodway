@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../redux/userSlice';
 import { getImageUrl } from '../api';
 
-function FoodCard({data}) {
+function FoodCard({data, hideFooter = false}) {
 const [quantity,setQuantity]=useState(0)
 const dispatch=useDispatch()
 const navigate=useNavigate()
@@ -116,6 +116,7 @@ const newQty=quantity-1
         </div>
       </div>
 
+{!hideFooter && (
 <div className='flex items-center justify-between mt-auto p-4 bg-gray-50/50'>
 <div className='flex flex-col'>
   {hasOffer && (
@@ -153,6 +154,7 @@ const newQty=quantity-1
 </button>
 </div>
 </div>
+)}
 
 
     </div>

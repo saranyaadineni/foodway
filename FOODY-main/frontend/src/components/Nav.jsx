@@ -270,43 +270,47 @@ function Nav() {
                 </div>
               ) : (
                 <div 
-                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
-                  onClick={() => navigate("/signin")}
+                className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+                onClick={() => navigate("/signin")}
+              >
+                <FiUser size={20} />
+                <span>Sign In</span>
+              </div>
+            )}
+
+            {(isLoggedIn || location.pathname === "/search") && (
+                <div 
+                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group"
+                  onClick={() => navigate("/cart")}
                 >
-                  <FiUser size={20} />
-                  <span>Sign In</span>
+                  <div className="relative">
+                    <FiShoppingCart size={22} className={cartItems?.length > 0 ? "text-[#60b246]" : "text-gray-700 group-hover:text-[#fc8019]"} />
+                    {cartItems?.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-[#60b246] text-white text-[10px] rounded-full w-[16px] h-[16px] flex items-center justify-center font-bold">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </div>
+                  <span>Cart</span>
                 </div>
               )}
+          </div>
 
-              <div 
-                className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group"
-                onClick={() => navigate("/cart")}
-              >
-                <div className="relative">
-                  <FiShoppingCart size={22} className={cartItems?.length > 0 ? "text-[#60b246]" : "text-gray-700 group-hover:text-[#fc8019]"} />
+          {/* Mobile Help Page Items */}
+            <div className="flex lg:hidden items-center gap-4">
+              {(isLoggedIn || location.pathname === "/search") && (
+                <div
+                  className="relative cursor-pointer"
+                  onClick={() => navigate("/cart")}
+                >
+                  <FiShoppingCart size={22} className={cartItems?.length > 0 ? "text-[#60b246]" : "text-gray-700"} />
                   {cartItems?.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-[#60b246] text-white text-[10px] rounded-full w-[16px] h-[16px] flex items-center justify-center font-bold">
+                    <span className="absolute -top-2 -right-2 bg-[#60b246] text-white text-[9px] rounded-full w-[15px] h-[15px] flex items-center justify-center font-bold">
                       {cartItems.length}
                     </span>
                   )}
                 </div>
-                <span>Cart</span>
-              </div>
-            </div>
-
-            {/* Mobile Help Page Items */}
-            <div className="flex lg:hidden items-center gap-4">
-              <div
-                className="relative cursor-pointer"
-                onClick={() => navigate("/cart")}
-              >
-                <FiShoppingCart size={22} className={cartItems?.length > 0 ? "text-[#60b246]" : "text-gray-700"} />
-                {cartItems?.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#60b246] text-white text-[9px] rounded-full w-[15px] h-[15px] flex items-center justify-center font-bold">
-                    {cartItems.length}
-                  </span>
-                )}
-              </div>
+              )}
               {isLoggedIn ? (
                 <div
                   className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs cursor-pointer"
@@ -410,7 +414,7 @@ function Nav() {
             ) : (
               <>
                 {/* Cart */}
-                {(isUser || !isLoggedIn) && (location.pathname === "/search" || location.pathname === "/") && (
+                {(isLoggedIn || location.pathname === "/search") && (isUser || !isLoggedIn) && (location.pathname === "/search" || location.pathname === "/") && (
                   <div
                     className="flex items-center gap-2 cursor-pointer hover:text-[#fc8019] transition-colors relative group"
                     onClick={() => navigate("/cart")}

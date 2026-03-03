@@ -334,7 +334,7 @@ function UserDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center sm:justify-items-start">
           {topRatedItems.length > 0 ? (
             topRatedItems.map((item) => (
-              <FoodCard key={item._id} data={item} />
+              <FoodCard key={item._id} data={item} hideFooter={true} />
             ))
           ) : (
             <div className="w-full text-center py-10 col-span-full">

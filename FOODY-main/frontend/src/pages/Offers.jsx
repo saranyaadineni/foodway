@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import Nav from "../components/Nav";
 import { itemAPI } from "../api";
 import FoodCard from "../components/FoodCard";
-import Footer from "../components/Footer";
 import { HiOutlineReceiptPercent } from "react-icons/hi2";
 
 function Offers() {
@@ -79,8 +78,6 @@ function Offers() {
           </div>
         )}
       </div>
-      
-      <Footer />
     </div>
   );
 }

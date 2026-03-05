@@ -39,10 +39,21 @@ function SignUp() {
   }, []);
 
   const handleSignUp = async () => {
-    if (mobile.length !== 10) {
-      setErr("Mobile number must be exactly 10 digits");
+    // Mobile Validation: 10 digits and starts with 6,7,8,9
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(mobile)) {
+      setErr("Mobile number must be 10 digits and start with 6, 7, 8, or 9");
       return;
     }
+
+    // Password Validation: At least 8 characters and a strong password
+    // Strong password criteria: One uppercase, one lowercase, one number, and one special character
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setErr("Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters (@$!%*?&#)");
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await authAPI.signup({

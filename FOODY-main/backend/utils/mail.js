@@ -5,7 +5,9 @@ dotenv.config()
 // Helper to resolve current env-based mail configuration
 const resolveMailEnv = () => {
   const MAIL_USER = process.env.EMAIL || process.env.SMTP_USER
-  const MAIL_PASS = process.env.PASS || process.env.EMAIL_PASS || process.env.SMTP_PASS
+  let MAIL_PASS = process.env.PASS || process.env.EMAIL_PASS || process.env.SMTP_PASS
+  // Strip spaces from App Password if present (Gmail app passwords usually have them)
+  if (MAIL_PASS) MAIL_PASS = MAIL_PASS.replace(/\s/g, "")
   const MAIL_HOST = process.env.SMTP_HOST || "smtp.gmail.com"
   const MAIL_PORT = Number(process.env.SMTP_PORT || 465)
   return { MAIL_USER, MAIL_PASS, MAIL_HOST, MAIL_PORT }
@@ -21,12 +23,27 @@ const getTransporter = async () => {
     const { MAIL_USER, MAIL_PASS, MAIL_HOST, MAIL_PORT } = resolveMailEnv()
     const hasMailerCreds = !!(MAIL_USER && MAIL_PASS)
     if (hasMailerCreds) {
-      transporter = nodemailer.createTransport({
+      const config = {
         host: MAIL_HOST,
         port: MAIL_PORT,
         secure: MAIL_PORT === 465,
         auth: { user: MAIL_USER, pass: MAIL_PASS },
-      })
+        tls: {
+          // Do not fail on invalid certs (common in local dev/certain network environments)
+          rejectUnauthorized: false
+        }
+      }
+      
+      // Optimization for Gmail
+      if (MAIL_HOST.includes("gmail.com")) {
+        config.service = "gmail"
+        // When using service: 'gmail', host/port/secure are handled automatically by nodemailer
+        delete config.host
+        delete config.port
+        delete config.secure
+      }
+      
+      transporter = nodemailer.createTransport(config)
     }
   }
 
@@ -94,9 +111,9 @@ const safeSendMail = async (mailOptions) => {
     }
     return info
   } catch (err) {
-    // Do not propagate mail errors; log once and continue to avoid noisy logs/500s
-    console.warn(`[MAILER] sendMail failed: ${err?.message || err}`)
-    return Promise.resolve()
+    // Propagate mail errors so that calling controllers can handle them
+    console.error(`[MAILER] sendMail failed: ${err?.message || err}`)
+    throw err
   }
 }
 

@@ -50,6 +50,21 @@ function CartPage() {
 
     const handleSignUp = async (e) => {
         e.preventDefault();
+
+        // Mobile Validation: 10 digits and starts with 6,7,8,9
+        const mobileRegex = /^[6-9]\d{9}$/;
+        if (!mobileRegex.test(mobile)) {
+            setError("Mobile number must be 10 digits and start with 6, 7, 8, or 9");
+            return;
+        }
+
+        // Password Validation: At least 8 characters and a strong password
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            setError("Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters (@$!%*?&#)");
+            return;
+        }
+
         setLoading(true);
         setError('');
         try {

@@ -16,9 +16,9 @@ function CreateEditShop() {
   );
 
   const [name, setName] = useState(myShopData?.name || "");
-  const [address, setAddress] = useState(myShopData?.address || currentAddress);
-  const [city, setCity] = useState(myShopData?.city || currentCity);
-  const [state, setState] = useState(myShopData?.state || currentState);
+  const [address, setAddress] = useState(myShopData?.address || "");
+  const [city, setCity] = useState(myShopData?.city || "");
+  const [state, setState] = useState(myShopData?.state || "");
   const [frontendImage, setFrontendImage] = useState(getImageUrl(myShopData?.image) || null);
   const [backendImage, setBackendImage] = useState(null);
   const [upiVpa, setUpiVpa] = useState(myShopData?.upiVpa || "");
@@ -160,9 +160,10 @@ function CreateEditShop() {
               </label>
               <input
                 type="text"
-                placeholder="City"
+                placeholder="Enter city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
+                required
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all"
               />
             </div>
@@ -172,9 +173,10 @@ function CreateEditShop() {
               </label>
               <input
                 type="text"
-                placeholder="State"
+                placeholder="Enter state"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
+                required
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all"
               />
             </div>
@@ -189,6 +191,7 @@ function CreateEditShop() {
               placeholder="Enter full shop address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              required
               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all"
             />
           </div>

@@ -69,9 +69,16 @@ export const signUp=async (req,res) => {
 export const signIn=async (req,res) => {
     try {
         const {email,password}=req.body
+        if (!email) {
+            return res.status(400).json({message:"Email is required"})
+        }
+        if (!password) {
+            return res.status(400).json({message:"Password is required"})
+        }
+
         const user=await User.findOne({email})
         if(!user){
-            return res.status(400).json({message:"User does not exist."})
+            return res.status(400).json({message:"Invalid email or password"})
         }
         // If the account was created via Google auth, there may be no password
         if(!user.password){
@@ -85,7 +92,7 @@ export const signIn=async (req,res) => {
         
      const isMatch=await bcrypt.compare(password,user.password)
      if(!isMatch){
-         return res.status(400).json({message:"incorrect Password"})
+         return res.status(400).json({message:"Invalid email or password"})
      }
 
     const token=await genToken(user)

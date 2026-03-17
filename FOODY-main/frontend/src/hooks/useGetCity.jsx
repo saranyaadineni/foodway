@@ -12,10 +12,10 @@ function useGetCity() {
     useEffect(() => {
         // Only get location if user is authenticated and we don't already have location data
         if (userData && userData._id && !currentCity) {
-            // dispatch(setCurrentCity('Hyderabad'))
-            // dispatch(setCurrentState('Telangana'))
-            // dispatch(setCurrentAddress('Hyderabad, Telangana'))
-            // dispatch(setAddress('Hyderabad, Telangana'))
+            dispatch(setCurrentCity('Hyderabad'))
+            dispatch(setCurrentState('Telangana'))
+            dispatch(setCurrentAddress('Hyderabad, Telangana'))
+            dispatch(setAddress('Hyderabad, Telangana'))
             
             navigator.geolocation.getCurrentPosition(async (position) => {
                 const latitude = position.coords.latitude

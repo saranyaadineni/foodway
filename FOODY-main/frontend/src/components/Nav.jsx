@@ -134,7 +134,7 @@ function Nav() {
         const longitude = pos.coords.longitude;
         dispatch(setLocation({ lat: latitude, lon: longitude }));
         const address = "Current location";
-        const city = currentCity || "";
+        const city = currentCity || "Hyderabad";
         dispatch(setCurrentCity(city));
         dispatch(setCurrentState(""));
         dispatch(setCurrentAddress(address));

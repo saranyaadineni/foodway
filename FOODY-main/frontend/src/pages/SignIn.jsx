@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../api";
 import { ClipLoader } from "react-spinners";
@@ -48,10 +47,6 @@ function SignIn() {
       setErr(error?.response?.data?.message || "Sign-in request error");
     }
     setLoading(false);
-  };
-
-  const handleGoogleAuth = async () => {
-    setErr("Google sign-in is currently unavailable. Please sign in with email and password.");
   };
 
   return (
@@ -134,25 +129,6 @@ function SignIn() {
             {err}
           </div>
         )}
-
-        {/* Divider */}
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-gray-300" />
-          <span className="mx-3 text-gray-500 text-sm font-medium">or</span>
-          <div className="flex-grow border-t border-gray-300" />
-        </div>
-
-        {/* Google Auth */}
-        <button
-          onClick={handleGoogleAuth}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-xl bg-white hover:bg-[#fff9f7] hover:shadow-md transition-all"
-        >
-          <FcGoogle size={22} />
-          <span className="font-semibold text-gray-700">
-            Continue with Google
-          </span>
-        </button>
 
         {/* Signup */}
         <p className="text-center mt-6 text-gray-700 text-sm font-medium">

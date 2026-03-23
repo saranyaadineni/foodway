@@ -13,9 +13,22 @@ function ForgotPassword() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
+    } else if (step === 3) {
+      setStep(2);
+    } else {
+      navigate("/signin");
+    }
+  };
 
   const handleSendOtp = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setErr("Please enter a valid email address");
+      return;
+    }
     setLoading(true);
     try {
       const result = await authAPI.sendOtp(email);
@@ -42,6 +55,14 @@ function ForgotPassword() {
   };
 
   const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      setErr("Please fill out all fields");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setErr("Password must be at least 6 characters long");
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setErr("Passwords do not match");
       return;
@@ -71,7 +92,7 @@ function ForgotPassword() {
           <IoIosArrowRoundBack
             size={36}
             className="text-[#ff2b85] cursor-pointer hover:text-[#fc8019] transition"
-            onClick={() => navigate("/signin")}
+            onClick={handleBack}
           />
           <h1 className="text-3xl font-extrabold text-[#fc8019] tracking-tight drop-shadow-sm">
             Forgot Password

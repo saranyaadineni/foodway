@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
-import UserType from "./models/userType.model.js";
+import dotenv from "dotenv";
+import UserType from "./models/usertype.model.js";
+
+dotenv.config();
 
 const createSampleUserTypes = async () => {
     try {

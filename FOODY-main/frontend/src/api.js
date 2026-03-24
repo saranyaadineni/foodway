@@ -141,6 +141,12 @@ export const shopAPI = {
 
   updateStatus: (isOpen) =>
     api.put("/api/shop/update-status", { isOpen }),
+
+  getBestSelling: () =>
+    api.get("/api/shop/best-selling"),
+
+  getTopRated: () =>
+    api.get("/api/shop/top-rated"),
 };
 
 /* =======================

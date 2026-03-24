@@ -18,6 +18,11 @@ function OwnerDashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Dashboard stats state
+  const [bestSellingItems, setBestSellingItems] = useState([]);
+  const [topRatedItems, setTopRatedItems] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+
   // Categories state
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState({ name: '', description: '', image: null });
@@ -53,6 +58,22 @@ function OwnerDashboard() {
     }
   }, []);
 
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const [bestSellingRes, topRatedRes] = await Promise.all([
+        shopAPI.getBestSelling(),
+        shopAPI.getTopRated()
+      ]);
+      setBestSellingItems(bestSellingRes.data);
+      setTopRatedItems(topRatedRes.data);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const refreshShop = async () => {
       try {
@@ -66,7 +87,8 @@ function OwnerDashboard() {
     };
     refreshShop();
     fetchCategories();
-  }, [dispatch, fetchCategories]);
+    fetchDashboardStats();
+  }, [dispatch, fetchCategories, fetchDashboardStats]);
 
   const handleShopStatusToggle = async () => {
     try {
@@ -283,6 +305,87 @@ function OwnerDashboard() {
                 <div className="bg-white rounded-xl p-5 shadow border border-gray-100 text-center">
                   <p className="text-sm text-gray-600">Total Menu Items</p>
                   <p className="text-3xl font-bold text-[#ff4d2d] mt-1">{myShopData.items.length}</p>
+                </div>
+              </div>
+
+              {/* Dashboard Insights */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mb-10">
+                {/* 🔥 Best Selling Items */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🔥</span>
+                    <h2 className="text-xl font-bold text-gray-800">Best Selling Items</h2>
+                  </div>
+                  {statsLoading ? (
+                    <div className="flex justify-center py-10">
+                      <ClipLoader color="#ff4d2d" size={30} />
+                    </div>
+                  ) : bestSellingItems.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
+                      <p className="text-gray-500 italic">No order data available yet.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {bestSellingItems.map((item) => (
+                        <div key={item._id} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                          <img 
+                            src={getImageUrl(item.image)} 
+                            alt={item.name} 
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-gray-900 truncate">{item.name}</h4>
+                            <p className="text-sm text-[#ff4d2d] font-semibold">₹{item.price}</p>
+                          </div>
+                          <div className="bg-orange-50 px-3 py-1 rounded-full">
+                            <p className="text-xs font-bold text-[#fc8019] whitespace-nowrap">
+                              {item.popularity || 0} orders
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ⭐ Top Rated Items */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    <h2 className="text-xl font-bold text-gray-800">Top Rated Items</h2>
+                  </div>
+                  {statsLoading ? (
+                    <div className="flex justify-center py-10">
+                      <ClipLoader color="#ff4d2d" size={30} />
+                    </div>
+                  ) : topRatedItems.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
+                      <p className="text-gray-500 italic">No highly rated items yet (min. 3 reviews).</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {topRatedItems.map((item) => (
+                        <div key={item._id} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                          <img 
+                            src={getImageUrl(item.image)} 
+                            alt={item.name} 
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-gray-900 truncate">{item.name}</h4>
+                            <div className="flex items-center gap-1 mt-1">
+                              <FaStar className="text-yellow-400 text-xs" />
+                              <span className="text-sm font-bold text-gray-700">{item.rating?.average?.toFixed(1)}</span>
+                              <span className="text-xs text-gray-400">({item.rating?.count} reviews)</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-[#ff4d2d] font-semibold">₹{item.price}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

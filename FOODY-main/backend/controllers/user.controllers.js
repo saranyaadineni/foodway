@@ -1,5 +1,5 @@
 import User from "../models/user.model.js";
-import DeliveryAssignment from "../models/deliveryAssignment.model.js";
+import DeliveryAssignment from "../models/deliveryassignment.model.js";
 
 
 export const getCurrentUser = async (req, res) => {

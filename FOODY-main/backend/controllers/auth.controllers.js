@@ -1,7 +1,9 @@
-import User from "../models/user.model.js"
-import bcrypt, { hash } from "bcryptjs"
-import genToken from "../utils/token.js"
-import { sendOtpMail } from "../utils/mail.js"
+import User from "../models/user.model.js";
+import bcrypt from "bcryptjs";
+import genToken from "../utils/token.js";
+import { sendOtpMail } from "../utils/mail.js";
+import UserType from "../models/usertype.model.js";
+
 export const signUp=async (req,res) => {
     try {
         const {fullName,email,password,mobile,role,userType}=req.body
@@ -32,7 +34,6 @@ export const signUp=async (req,res) => {
             userData.userType = userType;
             
             // Set delivery permission based on user type
-            const UserType = (await import("../models/userType.model.js")).default;
             const userTypeDoc = await UserType.findOne({ name: userType });
             if(userTypeDoc) {
                 userData.deliveryAllowed = userTypeDoc.deliveryAllowed;
@@ -225,7 +226,6 @@ export const googleAuth=async (req,res) => {
             userData.userType = userType;
             
             // Set delivery permission based on user type
-            const UserType = (await import("../models/userType.model.js")).default;
             const userTypeDoc = await UserType.findOne({ name: userType });
             if(userTypeDoc) {
                 userData.deliveryAllowed = userTypeDoc.deliveryAllowed;

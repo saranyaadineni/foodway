@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "checkJs": false,
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": false,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0,
+    "paths": {
+      "*": ["*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

@@ -1,8 +1,16 @@
-import express from "express"
-import { googleAuth, resetPassword, sendOtp, signIn, signOut, signUp, verifyOtp } from "../controllers/auth.controllers.js"
-import { getUserTypes } from "../controllers/superadmin.controllers.js"
+import express from "express";
+import {
+    googleAuth,
+    resetPassword,
+    sendOtp,
+    signIn,
+    signOut,
+    signUp,
+    verifyOtp
+} from "../controllers/auth.controllers.js";
+import { getUserTypes } from "../controllers/superadmin.controllers.js";
 
-const authRouter=express.Router()
+const authRouter = express.Router();
 
 authRouter.post("/signup",signUp)
 authRouter.post("/signin",signIn)

@@ -162,6 +162,43 @@ export const updateShopStatus = async (req, res) => {
   }
 };
 
+/* ---------------- GET BEST SELLING ITEMS ---------------- */
+export const getBestSellingItems = async (req, res) => {
+  try {
+    const shop = await Shop.findOne({ owner: req.userId });
+    if (!shop) return res.status(404).json({ message: "Shop not found" });
+
+    const items = await Item.find({ shop: shop._id })
+      .sort({ popularity: -1 })
+      .limit(5);
+
+    return res.status(200).json(items);
+  } catch (error) {
+    console.error("❌ getBestSellingItems:", error);
+    return res.status(500).json({ message: "Failed to fetch best selling items" });
+  }
+};
+
+/* ---------------- GET TOP RATED ITEMS ---------------- */
+export const getTopRatedItems = async (req, res) => {
+  try {
+    const shop = await Shop.findOne({ owner: req.userId });
+    if (!shop) return res.status(404).json({ message: "Shop not found" });
+
+    const items = await Item.find({
+      shop: shop._id,
+      "rating.count": { $gt: 3 },
+    })
+      .sort({ "rating.average": -1 })
+      .limit(5);
+
+    return res.status(200).json(items);
+  } catch (error) {
+    console.error("❌ getTopRatedItems:", error);
+    return res.status(500).json({ message: "Failed to fetch top rated items" });
+  }
+};
+
 /* ---------------- FIX SHOP OWNERS (Utility) ---------------- */
 export const fixShopOwners = async (req, res) => {
   try {

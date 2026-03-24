@@ -5,6 +5,8 @@ import {
   getShopByCity,
   getAllShops,
   updateShopStatus,
+  getBestSellingItems,
+  getTopRatedItems,
 } from "../controllers/shop.controllers.js";
 
 import isAuth from "../middlewares/isAuth.js";
@@ -25,5 +27,7 @@ shopRouter.post(
 
 shopRouter.get("/get-my", isAuth, getMyShop);
 shopRouter.put("/update-status", isAuth, updateShopStatus);
+shopRouter.get("/best-selling", isAuth, getBestSellingItems);
+shopRouter.get("/top-rated", isAuth, getTopRatedItems);
 
 export default shopRouter;

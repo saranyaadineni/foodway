@@ -258,6 +258,19 @@ export const orderAPI = {
 export const categoryAPI = {
   getCategories: () =>
     api.get("/api/categories"),
+
+  createCategory: (formData) =>
+    api.post("/api/categories", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  updateCategory: (categoryId, formData) =>
+    api.put(`/api/categories/${categoryId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  deleteCategory: (categoryId) =>
+    api.delete(`/api/categories/${categoryId}`),
 };
 
 /* =======================
@@ -299,22 +312,6 @@ export const superAdminAPI = {
     api.post(`/api/superadmin/update-owner-status/${userId}`, {
       action,
     }),
-
-  getCategories: () =>
-    api.get("/api/superadmin/categories"),
-
-  createCategory: (formData) =>
-    api.post("/api/superadmin/create-category", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
-  updateCategory: (categoryId, formData) =>
-    api.post(`/api/superadmin/update-category/${categoryId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
-  deleteCategory: (categoryId) =>
-    api.delete(`/api/superadmin/delete-category/${categoryId}`),
 
   getUsers: (params) =>
     api.get("/api/superadmin/users", { params }),

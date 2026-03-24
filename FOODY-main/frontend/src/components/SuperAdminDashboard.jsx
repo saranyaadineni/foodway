@@ -30,14 +30,6 @@ const SuperAdminDashboard = () => {
     const [pendingDeliveryBoys, setPendingDeliveryBoys] = useState([]);
     const [pendingOwners, setPendingOwners] = useState([]);
 
-    // Categories data
-    const [categories, setCategories] = useState([]);
-    const [newCategory, setNewCategory] = useState({ name: '', description: '', image: null });
-    const [categoryImagePreview, setCategoryImagePreview] = useState(null);
-    const [editingCategory, setEditingCategory] = useState(null);
-    const [editCategoryData, setEditCategoryData] = useState({ name: '', description: '', image: null });
-    const [editCategoryImagePreview, setEditCategoryImagePreview] = useState(null);
-
     // User management data
     const [users, setUsers] = useState([]);
     const [searchRole, setSearchRole] = useState('all');
@@ -437,7 +429,6 @@ const SuperAdminDashboard = () => {
                                 { id: 'dashboard', label: 'Dashboard' },
                                 { id: 'deliveryboys', label: 'Delivery Boy Approvals' },
                                 { id: 'owners', label: 'Owner Approvals' },
-                                { id: 'categories', label: 'Categories' },
                                 { id: 'users', label: 'User Management' },
                                 { id: 'usertypes', label: 'User Types' },
                                 { id: 'content', label: 'Manage Content' }
@@ -481,8 +472,7 @@ const SuperAdminDashboard = () => {
                                     { label: 'Total Users', value: dashboardStats.userCount, color: 'text-blue-600', bg: 'bg-blue-50' },
                                     { label: 'Total Owners', value: dashboardStats.ownerCount, color: 'text-green-600', bg: 'bg-green-50' },
                                     { label: 'Delivery Boys', value: dashboardStats.deliveryBoyCount, color: 'text-purple-600', bg: 'bg-purple-50' },
-                                    { label: 'Pending Owners', value: dashboardStats.pendingOwnerCount, color: 'text-orange-600', bg: 'bg-orange-50' },
-                                    { label: 'Categories', value: dashboardStats.categoryCount, color: 'text-indigo-600', bg: 'bg-indigo-50' }
+                                    { label: 'Pending Owners', value: dashboardStats.pendingOwnerCount, color: 'text-orange-600', bg: 'bg-orange-50' }
                                 ].map((stat, index) => (
                                     <div key={index} className={`${stat.bg} backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl hover:scale-105 transition-all duration-300`}>
                                         <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.label}</h3>
@@ -570,182 +560,6 @@ const SuperAdminDashboard = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Categories */}
-                    {activeTab === 'categories' && (
-                        <div className="bg-white/80 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6">Category Management</h2>
-
-                            {/* Add Category Form */}
-                            <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-6 mb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Category</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Category Name"
-                                        value={newCategory.name}
-                                        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Description"
-                                        value={newCategory.description}
-                                        onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                    />
-                                </div>
-
-                                {/* Image Upload Section */}
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Category Image</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setNewCategory({ ...newCategory, image: file });
-                                                setCategoryImagePreview(URL.createObjectURL(file));
-                                            }
-                                        }}
-                                        className="border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#fc8019] w-full bg-white/80"
-                                    />
-                                    {categoryImagePreview && (
-                                        <div className="mt-2">
-                                            <img
-                                                src={categoryImagePreview}
-                                                alt="Category preview"
-                                                className="w-32 h-32 object-cover rounded-xl border border-white/40"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={createCategory}
-                                    disabled={loading}
-                                    className="mt-4 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] hover:from-[#e67315] hover:to-[#e62579] text-white px-4 py-2 rounded-xl font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60"
-                                >
-                                    Add Category
-                                </button>
-                            </div>
-
-                            {/* Categories List */}
-                            {loading ? (
-                                <div className="text-center py-4">Loading...</div>
-                            ) : categories.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">No categories found</div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {categories.map((category) => (
-                                        <div key={category._id} className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:bg-white/80 transition-colors">
-                                            {editingCategory === category._id ? (
-                                                // Edit Mode
-                                                <div className="space-y-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Category Name"
-                                                            value={editCategoryData.name}
-                                                            onChange={(e) => setEditCategoryData({ ...editCategoryData, name: e.target.value })}
-                                                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Description"
-                                                            value={editCategoryData.description}
-                                                            onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
-                                                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                                        />
-                                                    </div>
-
-                                                    {/* Image Upload Section for Edit */}
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Category Image</label>
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    setEditCategoryData({ ...editCategoryData, image: file });
-                                                                    setEditCategoryImagePreview(URL.createObjectURL(file));
-                                                                }
-                                                            }}
-                                                            className="border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#fc8019] w-full bg-white/80"
-                                                        />
-                                                        {editCategoryImagePreview && (
-                                                            <div className="mt-2">
-                                                                <img
-                                                                    src={editCategoryImagePreview}
-                                                                    alt="Category preview"
-                                                                    className="w-32 h-32 object-cover rounded-xl border border-white/40"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex space-x-2">
-                                                        <button
-                                                            onClick={() => updateCategory(category._id)}
-                                                            disabled={loading}
-                                                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
-                                                        >
-                                                            Save
-                                                        </button>
-                                                        <button
-                                                            onClick={cancelEditCategory}
-                                                            className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                // View Mode
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center space-x-4">
-                                                        {category.image && (
-                                                            <img
-                                                                src={getImageUrl(category.image)}
-                                                                alt={category.name}
-                                                                className="w-16 h-16 object-cover rounded-xl border border-white/40"
-                                                            />
-                                                        )}
-                                                        <div>
-                                                            <h3 className="text-lg font-medium text-gray-900">
-                                                                {category.name}
-                                                                <span className="text-sm text-blue-600 ml-2">
-                                                                    (ID: {category.categoryId || category._id})
-                                                                </span>
-                                                            </h3>
-                                                            <p className="text-sm text-gray-500">{category.description}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex space-x-2">
-                                                        <button
-                                                            onClick={() => startEditCategory(category)}
-                                                            className="bg-gradient-to-r from-[#fc8019] to-[#ff2b85] hover:from-[#e67315] hover:to-[#e62579] text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
-                                                            disabled={loading}
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteCategory(category._id)}
-                                                            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-60"
-                                                            disabled={loading}
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>

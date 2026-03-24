@@ -278,14 +278,12 @@ export const getDashboardStats = async (req, res) => {
         const ownerCount = await User.countDocuments({ role: "owner" });
         const deliveryBoyCount = await User.countDocuments({ role: "deliveryBoy", isApproved: true });
         const pendingOwnerCountActual = await User.countDocuments({ role: "owner", isApproved: false });
-        const categoryCount = await Category.countDocuments({ isActive: true });
         
         res.status(200).json({
             userCount,
             ownerCount,
             deliveryBoyCount,
             pendingOwnerCount: pendingOwnerCountActual, // Field name expected by frontend
-            categoryCount
         });
     } catch (error) {
         res.status(500).json({ message: `Error fetching dashboard stats: ${error}` });

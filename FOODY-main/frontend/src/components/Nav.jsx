@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaLocationDot, FaPlus, FaStore } from "react-icons/fa6";
+import { FaLocationDot, FaPlus, FaStore, FaList, FaUtensils } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import { FiShoppingCart, FiHelpCircle, FiUser } from "react-icons/fi";
 import { TbReceipt2 } from "react-icons/tb";
@@ -14,6 +14,7 @@ import {
   setCurrentAddress,
   setCurrentState,
 } from "../redux/userSlice";
+import { setActiveTab } from "../redux/ownerSlice";
 import { userAPI, authAPI } from "../api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setAddress, setLocation } from "../redux/mapSlice";
@@ -472,6 +473,43 @@ function Nav() {
                         <TbReceipt2 size={18} />
                         My Orders
                       </div>
+                    )}
+                    {userData.role === "owner" && (
+                      <>
+                        <div
+                          onClick={() => {
+                            dispatch(setActiveTab('dashboard'));
+                            navigate("/");
+                            setShowInfo(false);
+                          }}
+                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
+                        >
+                          <FaStore size={18} />
+                          Dashboard
+                        </div>
+                        <div
+                          onClick={() => {
+                            dispatch(setActiveTab('menu'));
+                            navigate("/");
+                            setShowInfo(false);
+                          }}
+                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
+                        >
+                          <FaUtensils size={18} />
+                          Menu Items
+                        </div>
+                        <div
+                          onClick={() => {
+                            dispatch(setActiveTab('categories'));
+                            navigate("/");
+                            setShowInfo(false);
+                          }}
+                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
+                        >
+                          <FaList size={18} />
+                          Categories
+                        </div>
+                      </>
                     )}
                     <div
                       onClick={handleLogOut}

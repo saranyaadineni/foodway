@@ -48,15 +48,6 @@ router.post("/update-delivery-boy-status/:userId", isAuth, isSuperAdmin, (req, r
 router.post("/update-delivery-boy-status", isAuth, isSuperAdmin, updateDeliveryBoyStatus);
 router.post("/deliveryboys/update-status", isAuth, isSuperAdmin, updateDeliveryBoyStatus);
 
-// Category management routes
-router.get("/categories", isAuth, isSuperAdmin, getCategories);
-router.post("/categories", isAuth, isSuperAdmin, upload.single("image"), createCategory);
-router.post("/create-category", isAuth, isSuperAdmin, upload.single("image"), createCategory);
-router.put("/categories/:categoryId", isAuth, isSuperAdmin, upload.single("image"), updateCategory);
-router.post("/update-category/:categoryId", isAuth, isSuperAdmin, upload.single("image"), updateCategory);
-router.delete("/categories/:categoryId", isAuth, isSuperAdmin, deleteCategory);
-router.delete("/delete-category/:categoryId", isAuth, isSuperAdmin, deleteCategory);
-
 // User search and management routes
 router.get("/users", isAuth, isSuperAdmin, getUsersByRole);
 router.get("/dashboard-stats", isAuth, isSuperAdmin, getDashboardStats);

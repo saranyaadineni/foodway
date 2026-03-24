@@ -117,19 +117,39 @@ export const createCategory = async (req, res) => {
         
         const { name, description } = req.body;
         
+        // --- Backend Validation ---
         if (!name || !name.trim()) {
-            console.log('Category creation failed: Name is required');
-            return res.status(400).json({ message: "Name is required" });
+            return res.status(400).json({ message: "Category name is required" });
         }
+        
+        const trimmedName = name.trim();
+        const trimmedDesc = (description || "").trim();
+
+        // Name validation: alphabets and spaces only, 3-50 chars
+        if (!/^[A-Za-z\s]+$/.test(trimmedName)) {
+            return res.status(400).json({ message: "Category name should contain only letters" });
+        }
+        if (trimmedName.length < 3 || trimmedName.length > 50) {
+            return res.status(400).json({ message: "Category name must be between 3 and 50 characters" });
+        }
+
+        // Description validation: required, 5-200 chars
+        if (!trimmedDesc) {
+            return res.status(400).json({ message: "Description is required" });
+        }
+        if (trimmedDesc.length < 5 || trimmedDesc.length > 200) {
+            return res.status(400).json({ message: "Description must be between 5 and 200 characters" });
+        }
+        // --- End Validation ---
         
         // Check for existing category (case-insensitive)
         const existingCategory = await Category.findOne({ 
-            name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
+            name: { $regex: new RegExp(`^${trimmedName}$`, 'i') },
             isActive: true 
         });
         if (existingCategory) {
-            console.log(`Category creation failed: Category '${name}' already exists`);
-            return res.status(400).json({ message: `Category '${name}' already exists` });
+            console.log(`Category creation failed: Category '${trimmedName}' already exists`);
+            return res.status(400).json({ message: `Category '${trimmedName}' already exists` });
         }
         
         let image = null;
@@ -155,8 +175,8 @@ export const createCategory = async (req, res) => {
         }
         
         const category = await Category.create({ 
-            name: name.trim(), 
-            description: description || '', 
+            name: trimmedName, 
+            description: trimmedDesc, 
             image: image 
         });
         console.log('Category created successfully:', category);
@@ -180,9 +200,30 @@ export const updateCategory = async (req, res) => {
         console.log('Update category request:', { categoryId, name, description });
         console.log('Request file:', req.file);
         
-        if (!name) {
-            return res.status(400).json({ message: "Name is required" });
+        // --- Backend Validation ---
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: "Category name is required" });
         }
+        
+        const trimmedName = name.trim();
+        const trimmedDesc = (description || "").trim();
+
+        // Name validation: alphabets and spaces only, 3-50 chars
+        if (!/^[A-Za-z\s]+$/.test(trimmedName)) {
+            return res.status(400).json({ message: "Category name should contain only letters" });
+        }
+        if (trimmedName.length < 3 || trimmedName.length > 50) {
+            return res.status(400).json({ message: "Category name must be between 3 and 50 characters" });
+        }
+
+        // Description validation: required, 5-200 chars
+        if (!trimmedDesc) {
+            return res.status(400).json({ message: "Description is required" });
+        }
+        if (trimmedDesc.length < 5 || trimmedDesc.length > 200) {
+            return res.status(400).json({ message: "Description must be between 5 and 200 characters" });
+        }
+        // --- End Validation ---
         
         // Check if category exists
         const existingCategory = await Category.findById(categoryId);
@@ -192,7 +233,7 @@ export const updateCategory = async (req, res) => {
         
         // Check if name is already taken by another category
         const duplicateCategory = await Category.findOne({ 
-            name, 
+            name: trimmedName, 
             _id: { $ne: categoryId },
             isActive: true 
         });
@@ -201,7 +242,7 @@ export const updateCategory = async (req, res) => {
         }
         
         // Prepare update data
-        const updateData = { name, description };
+        const updateData = { name: trimmedName, description: trimmedDesc };
         
         // Handle image upload if provided
         if (req.file) {

@@ -20,7 +20,64 @@ function SignUp() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const validateField = (name, value) => {
+    let errors = { ...fieldErrors };
+    
+    if (name === "fullName") {
+      if (!value || !value.trim()) {
+        errors.fullName = "Full name is required";
+      } else if (!/^[A-Za-z\s]+$/.test(value)) {
+        errors.fullName = "Full name must contain only letters";
+      } else if (value.trim().length < 3 || value.trim().length > 50) {
+        errors.fullName = "Full name must be between 3 and 50 characters";
+      } else {
+        delete errors.fullName;
+      }
+    }
+
+    if (name === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!value || !value.trim()) {
+        errors.email = "Email is required";
+      } else if (!emailRegex.test(value)) {
+        errors.email = "Please enter a valid email address";
+      } else if (value.length > 100) {
+        errors.email = "Email is too long";
+      } else {
+        delete errors.email;
+      }
+    }
+
+    if (name === "mobile") {
+      const mobileRegex = /^[6-9]\d{9}$/;
+      if (!value || !value.trim()) {
+        errors.mobile = "Mobile number is required";
+      } else if (!mobileRegex.test(value)) {
+        errors.mobile = "Enter a valid 10-digit mobile number";
+      } else {
+        delete errors.mobile;
+      }
+    }
+
+    if (name === "password") {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+      if (!value) {
+        errors.password = "Password is required";
+      } else if (value.length < 8) {
+        errors.password = "Password must be at least 8 characters long";
+      } else if (!passwordRegex.test(value)) {
+        errors.password = "Must include uppercase, lowercase, numbers, and symbols";
+      } else {
+        delete errors.password;
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   useEffect(() => {
     const fetchUserTypes = async () => {
@@ -38,26 +95,22 @@ function SignUp() {
   }, []);
 
   const handleSignUp = async () => {
-    // Mobile Validation: 10 digits and starts with 6,7,8,9
-    const mobileRegex = /^[6-9]\d{9}$/;
-    if (!mobileRegex.test(mobile)) {
-      setErr("Mobile number must be 10 digits and start with 6, 7, 8, or 9");
-      return;
-    }
+    // Validate all fields
+    const isNameValid = validateField("fullName", fullName);
+    const isEmailValid = validateField("email", email);
+    const isMobileValid = validateField("mobile", mobile);
+    const isPasswordValid = validateField("password", password);
 
-    // Password Validation: At least 8 characters and a strong password
-    // Strong password criteria: One uppercase, one lowercase, one number, and one special character
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      setErr("Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters (@$!%*?&#)");
+    if (!isNameValid || !isEmailValid || !isMobileValid || !isPasswordValid) {
+      setErr("Please fix the validation errors before signing up");
       return;
     }
 
     setLoading(true);
     try {
       const result = await authAPI.signup({
-        fullName,
-        email,
+        fullName: fullName.trim(),
+        email: email.trim(),
         password,
         mobile,
         role,
@@ -103,7 +156,7 @@ function SignUp() {
         </div>
 
         {/* Full Name */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="block text-gray-700 font-semibold mb-1 text-sm">
             Full Name
           </label>
@@ -111,14 +164,20 @@ function SignUp() {
             type="text"
             placeholder="Enter your full name"
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            onChange={(e) => {
+              setFullName(e.target.value);
+              validateField("fullName", e.target.value);
+            }}
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+            className={`w-full border ${fieldErrors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
           />
+          {fieldErrors.fullName && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.fullName}</p>
+          )}
         </div>
 
         {/* Email */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="block text-gray-700 font-semibold mb-1 text-sm">
             Email
           </label>
@@ -126,14 +185,20 @@ function SignUp() {
             type="email"
             placeholder="example@email.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              validateField("email", e.target.value);
+            }}
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+            className={`w-full border ${fieldErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
           />
+          {fieldErrors.email && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.email}</p>
+          )}
         </div>
 
         {/* Mobile */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="block text-gray-700 font-semibold mb-1 text-sm">
             Mobile Number
           </label>
@@ -145,15 +210,19 @@ function SignUp() {
               const value = e.target.value;
               if (/^\d*$/.test(value) && value.length <= 10) {
                 setMobile(value);
+                validateField("mobile", value);
               }
             }}
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+            className={`w-full border ${fieldErrors.mobile ? 'border-red-500' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
           />
+          {fieldErrors.mobile && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.mobile}</p>
+          )}
         </div>
 
         {/* Password */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="block text-gray-700 font-semibold mb-1 text-sm">
             Password
           </label>
@@ -162,9 +231,12 @@ function SignUp() {
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                validateField("password", e.target.value);
+              }}
               required
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-10 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all"
+              className={`w-full border ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl px-4 py-2.5 pr-10 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all`}
             />
             <button
               type="button"
@@ -174,6 +246,9 @@ function SignUp() {
               {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
             </button>
           </div>
+          {fieldErrors.password && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.password}</p>
+          )}
         </div>
 
         {/* Role Selector */}
@@ -227,8 +302,8 @@ function SignUp() {
         {/* Sign Up Button */}
         <button
           onClick={handleSignUp}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60"
+          disabled={loading || Object.keys(fieldErrors).length > 0}
+          className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed"
         >
           {loading ? <ClipLoader size={22} color="white" /> : "Sign Up"}
         </button>
@@ -254,5 +329,3 @@ function SignUp() {
     </div>
   );
 }
-
-export default SignUp;

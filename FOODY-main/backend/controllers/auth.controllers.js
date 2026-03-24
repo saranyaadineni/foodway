@@ -7,22 +7,63 @@ import UserType from "../models/usertype.model.js";
 export const signUp=async (req,res) => {
     try {
         const {fullName,email,password,mobile,role,userType}=req.body
+
+        // --- Backend Validation ---
+        
+        // Full Name Validation
+        if (!fullName || !fullName.trim()) {
+            return res.status(400).json({ message: "Full name is required" });
+        }
+        const trimmedFullName = fullName.trim();
+        if (!/^[A-Za-z\s]+$/.test(trimmedFullName)) {
+            return res.status(400).json({ message: "Full name must contain only letters" });
+        }
+        if (trimmedFullName.length < 3 || trimmedFullName.length > 50) {
+            return res.status(400).json({ message: "Full name must be between 3 and 50 characters" });
+        }
+
+        // Email Validation
+        if (!email || !email.trim()) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Please enter a valid email address" });
+        }
+        if (email.length > 100) {
+            return res.status(400).json({ message: "Email is too long" });
+        }
+
+        // Mobile Validation
+        if (!mobile || !mobile.trim()) {
+            return res.status(400).json({ message: "Mobile number is required" });
+        }
+        const mobileRegex = /^[6-9]\d{9}$/;
+        if (!mobileRegex.test(mobile)) {
+            return res.status(400).json({ message: "Enter a valid 10-digit mobile number" });
+        }
+
+        // Password Validation
+        if (!password || password.length < 8) {
+            return res.status(400).json({ message: "Password must be at least 8 characters long" });
+        }
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).json({ message: "Password must include uppercase, lowercase, numbers, and special characters" });
+        }
+
+        // --- End Validation ---
+
         let user=await User.findOne({email})
         if(user){
             return res.status(400).json({message:"User Already exist."})
-        }
-        if(password.length<6){
-            return res.status(400).json({message:"password must be at least 6 characters."})
-        }
-        if(mobile.length !== 10){
-            return res.status(400).json({message:"mobile no must be exactly 10 digits."})
         }
      
         const hashedPassword=await bcrypt.hash(password,10)
         
         // Create user data object
         const userData = {
-            fullName,
+            fullName: trimmedFullName,
             email,
             role,
             mobile,

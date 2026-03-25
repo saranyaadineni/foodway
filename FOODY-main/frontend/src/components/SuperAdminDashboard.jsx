@@ -22,8 +22,7 @@ const SuperAdminDashboard = () => {
         userCount: 0,
         ownerCount: 0,
         deliveryBoyCount: 0,
-        pendingOwnerCount: 0,
-        categoryCount: 0
+        pendingOwnerCount: 0
     });
 
     // Delivery boy approvals data
@@ -39,51 +38,8 @@ const SuperAdminDashboard = () => {
     const [userTypes, setUserTypes] = useState([]);
     const [newUserType, setNewUserType] = useState({ name: '', description: '', deliveryAllowed: false });
 
-    // Categories state
-    const [categories, setCategories] = useState([]);
-    const [newCategory, setNewCategory] = useState({ name: '', description: '', image: null });
-    const [categoryImagePreview, setCategoryImagePreview] = useState(null);
-    const [editingCategory, setEditingCategory] = useState(null);
-    const [editCategoryData, setEditCategoryData] = useState({ name: '', description: '', image: null });
-    const [editCategoryImagePreview, setEditCategoryImagePreview] = useState(null);
-
     // Validation errors state
     const [validationErrors, setValidationErrors] = useState({});
-
-    const DESCRIPTION_MIN = 5;
-    const DESCRIPTION_MAX = 200;
-
-    const validateField = (name, value, type = 'add') => {
-        let errors = { ...validationErrors };
-        const fieldKey = `${type}_${name}`;
-
-        if (name === 'name') {
-            if (!value || !value.trim()) {
-                errors[fieldKey] = 'Category name is required';
-            } else if (!/^[A-Za-z\s]+$/.test(value)) {
-                errors[fieldKey] = 'Category name should contain only letters';
-            } else if (value.trim().length < 3 || value.trim().length > 50) {
-                errors[fieldKey] = 'Name must be between 3 and 50 characters';
-            } else {
-                delete errors[fieldKey];
-            }
-        }
-
-        if (name === 'description') {
-            if (!value || !value.trim()) {
-                errors[fieldKey] = 'Description is required';
-            } else if (value.trim().length < DESCRIPTION_MIN) {
-                errors[fieldKey] = `Description must be at least ${DESCRIPTION_MIN} characters`;
-            } else if (value.trim().length > DESCRIPTION_MAX) {
-                errors[fieldKey] = `Description cannot exceed ${DESCRIPTION_MAX} characters`;
-            } else {
-                delete errors[fieldKey];
-            }
-        }
-
-        setValidationErrors(errors);
-        return Object.keys(errors).filter(k => k.startsWith(type)).length === 0;
-    };
 
     // Effects moved below to avoid referencing callbacks before initialization
 
@@ -196,131 +152,6 @@ const SuperAdminDashboard = () => {
         }
     };
 
-    // Fetch categories
-    const fetchCategories = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await superAdminAPI.getCategories();
-            setCategories(response.data);
-        } catch (error) {
-            console.error('Error fetching categories:', error);
-            showMessage('Error fetching categories', 'error');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // Create category
-    const createCategory = async () => {
-        // Validate all fields
-        const isNameValid = validateField('name', newCategory.name, 'add');
-        const isDescValid = validateField('description', newCategory.description, 'add');
-
-        if (!isNameValid || !isDescValid) {
-            showMessage('Please fix validation errors before submitting', 'error');
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const formData = new FormData();
-            formData.append('name', newCategory.name.trim());
-            formData.append('description', newCategory.description.trim());
-            if (newCategory.image) {
-                formData.append('image', newCategory.image);
-            }
-
-            await superAdminAPI.createCategory(formData);
-            showMessage('Category created successfully');
-            setNewCategory({ name: '', description: '', image: null });
-            setCategoryImagePreview(null);
-            setValidationErrors({}); // Clear errors
-            fetchCategories(); // Refresh the list
-            fetchDashboardStats(); // Refresh stats
-        } catch (error) {
-            console.error('Error creating category:', error);
-            const errorMessage = error.response?.data?.message || 'Error creating category';
-            showMessage(errorMessage, 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Delete category
-    const deleteCategory = async (categoryId) => {
-        if (!window.confirm('Are you sure you want to delete this category?')) return;
-
-        try {
-            setLoading(true);
-            await superAdminAPI.deleteCategory(categoryId);
-            showMessage('Category deleted successfully');
-            fetchCategories(); // Refresh the list
-            fetchDashboardStats(); // Refresh stats
-        } catch (error) {
-            console.error('Error deleting category:', error);
-            showMessage('Error deleting category', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Start editing category
-    const startEditCategory = (category) => {
-        setEditingCategory(category._id);
-        setEditCategoryData({
-            name: category.name,
-            description: category.description,
-            image: null
-        });
-        setEditCategoryImagePreview(getImageUrl(category.image));
-        setValidationErrors({}); // Clear any existing errors
-    };
-
-    // Cancel editing category
-    const cancelEditCategory = () => {
-        setEditingCategory(null);
-        setEditCategoryData({ name: '', description: '', image: null });
-        setEditCategoryImagePreview(null);
-        setValidationErrors({});
-    };
-
-    // Update category
-    const updateCategory = async (categoryId) => {
-        // Validate all fields
-        const isNameValid = validateField('name', editCategoryData.name, 'edit');
-        const isDescValid = validateField('description', editCategoryData.description, 'edit');
-
-        if (!isNameValid || !isDescValid) {
-            showMessage('Please fix validation errors before updating', 'error');
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const formData = new FormData();
-            formData.append('name', editCategoryData.name.trim());
-            formData.append('description', editCategoryData.description.trim());
-            if (editCategoryData.image) {
-                formData.append('image', editCategoryData.image);
-            }
-
-            await superAdminAPI.updateCategory(categoryId, formData);
-            showMessage('Category updated successfully');
-            setEditingCategory(null);
-            setEditCategoryData({ name: '', description: '', image: null });
-            setEditCategoryImagePreview(null);
-            setValidationErrors({});
-            fetchCategories(); // Refresh the list
-            fetchDashboardStats(); // Refresh stats
-        } catch (error) {
-            console.error('Error updating category:', error);
-            const errorMessage = error.response?.data?.message || 'Error updating category';
-            showMessage(errorMessage, 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Fetch users
     const fetchUsers = useCallback(async () => {
         try {
@@ -366,18 +197,29 @@ const SuperAdminDashboard = () => {
             fetchPendingDeliveryBoys();
         } else if (activeTab === 'owners') {
             fetchPendingOwners();
-        } else if (activeTab === 'categories') {
-            fetchCategories();
         } else if (activeTab === 'users') {
             fetchUsers();
         } else if (activeTab === 'usertypes') {
             fetchUserTypes();
         }
-    }, [activeTab, fetchPendingDeliveryBoys, fetchPendingOwners, fetchCategories, fetchUsers, fetchUserTypes]);
+    }, [activeTab, fetchPendingDeliveryBoys, fetchPendingOwners, fetchUsers, fetchUserTypes]);
 
     // Debounced search for users
     useEffect(() => {
         if (activeTab === 'users') {
+            const term = searchTerm.trim();
+            if (term) {
+                const nameRegex = /^[A-Za-z\s]+$/;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                
+                if (!nameRegex.test(term) && !emailRegex.test(term)) {
+                    setError('Please enter a valid Name or Email address');
+                    setUsers([]); // Clear list on invalid search
+                    return;
+                }
+            }
+            
+            setError(''); // Clear error if valid or empty
             const debounceTimer = setTimeout(() => {
                 fetchUsers();
             }, 500);
@@ -387,14 +229,32 @@ const SuperAdminDashboard = () => {
 
     // Create user type
     const createUserType = async () => {
-        if (!newUserType.name.trim()) {
+        const normalizedName = newUserType.name.trim();
+        const normalizedDesc = newUserType.description.trim();
+        const alphaRegex = /^[A-Za-z\s]+$/;
+
+        // Validation
+        if (!normalizedName) {
             showMessage('User type name is required', 'error');
+            return;
+        }
+        if (!alphaRegex.test(normalizedName) || normalizedName.length < 3 || normalizedName.length > 50) {
+            showMessage('User Type Name must be 3–50 letters only', 'error');
+            return;
+        }
+
+        if (!normalizedDesc) {
+            showMessage('Description is required', 'error');
+            return;
+        }
+        if (!alphaRegex.test(normalizedDesc) || normalizedDesc.length < 3 || normalizedDesc.length > 50) {
+            showMessage('Description must be 3–50 letters only', 'error');
             return;
         }
 
         // Prevent client-side duplicates (case-insensitive)
-        const normalizedName = newUserType.name.trim().toLowerCase();
-        const isDuplicate = userTypes.some(ut => (ut.name || '').trim().toLowerCase() === normalizedName);
+        const checkName = normalizedName.toLowerCase();
+        const isDuplicate = userTypes.some(ut => (ut.name || '').trim().toLowerCase() === checkName);
         if (isDuplicate) {
             showMessage('User type already exists', 'error');
             return;
@@ -403,12 +263,13 @@ const SuperAdminDashboard = () => {
         try {
             setLoading(true);
             await superAdminAPI.createUserType({
-                name: newUserType.name.trim(),
-                description: newUserType.description,
+                name: normalizedName,
+                description: normalizedDesc,
                 deliveryAllowed: newUserType.deliveryAllowed
             });
             showMessage('User type created successfully');
             setNewUserType({ name: '', description: '', deliveryAllowed: false });
+            setValidationErrors({});
             fetchUserTypes(); // Refresh the list
         } catch (error) {
             console.error('Error creating user type:', error);
@@ -483,7 +344,6 @@ const SuperAdminDashboard = () => {
                         <nav className="flex space-x-4 sm:space-x-8 py-4 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap">
                             {[
                                 { id: 'dashboard', label: 'Dashboard' },
-                                { id: 'categories', label: 'Categories' },
                                 { id: 'deliveryboys', label: 'Delivery Boy Approvals' },
                                 { id: 'owners', label: 'Owner Approvals' },
                                 { id: 'users', label: 'User Management' },
@@ -534,196 +394,6 @@ const SuperAdminDashboard = () => {
                                     <div key={index} className={`${stat.bg} backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl hover:scale-105 transition-all duration-300`}>
                                         <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.label}</h3>
                                         <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Category Management */}
-                    {activeTab === 'categories' && (
-                        <div className="bg-white/80 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6">Category Management</h2>
-
-                            {/* Add Category Form */}
-                            <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-6 mb-8">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Category</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-xs font-bold text-gray-500 ml-1">CATEGORY NAME</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Biryani, Pizza"
-                                            value={newCategory.name}
-                                            onChange={(e) => {
-                                                setNewCategory({ ...newCategory, name: e.target.value });
-                                                validateField('name', e.target.value, 'add');
-                                            }}
-                                            className={`border ${validationErrors.add_name ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all`}
-                                        />
-                                        {validationErrors.add_name && (
-                                            <p className="text-red-500 text-[10px] font-bold ml-1 mt-0.5 uppercase tracking-wider">{validationErrors.add_name}</p>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex justify-between items-center ml-1">
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
-                                            <span className={`text-[10px] font-bold ${newCategory.description.length > DESCRIPTION_MAX ? 'text-red-500' : 'text-gray-400'}`}>
-                                                {newCategory.description.length} / {DESCRIPTION_MAX}
-                                            </span>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            placeholder="Short description of the category"
-                                            value={newCategory.description}
-                                            onChange={(e) => {
-                                                setNewCategory({ ...newCategory, description: e.target.value });
-                                                validateField('description', e.target.value, 'add');
-                                            }}
-                                            className={`border ${validationErrors.add_description ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all`}
-                                        />
-                                        {validationErrors.add_description && (
-                                            <p className="text-red-500 text-[10px] font-bold ml-1 mt-0.5 uppercase tracking-wider">{validationErrors.add_description}</p>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col gap-1 md:col-span-2">
-                                        <label className="text-xs font-bold text-gray-500 ml-1">CATEGORY IMAGE</label>
-                                        <div className="flex items-center gap-4">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files[0];
-                                                    if (file) {
-                                                        setNewCategory({ ...newCategory, image: file });
-                                                        setCategoryImagePreview(URL.createObjectURL(file));
-                                                    }
-                                                }}
-                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#fc8019] hover:file:bg-orange-100"
-                                            />
-                                            {categoryImagePreview && (
-                                                <img src={categoryImagePreview} alt="Preview" className="w-12 h-12 rounded-lg object-cover border" />
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={createCategory}
-                                    disabled={loading || !!validationErrors.add_name || !!validationErrors.add_description}
-                                    className="mt-6 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] hover:from-[#e67315] hover:to-[#e62579] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
-                                >
-                                    {loading ? 'Creating...' : 'Create Category'}
-                                </button>
-                            </div>
-
-                            {/* Categories List */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {categories.map((category) => (
-                                    <div key={category._id} className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-2xl p-4 hover:bg-white/80 transition-all group shadow-sm hover:shadow-md">
-                                        {editingCategory === category._id ? (
-                                            <div className="space-y-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <label className="text-[10px] font-bold text-gray-400 ml-1">NAME</label>
-                                                    <input
-                                                        type="text"
-                                                        value={editCategoryData.name}
-                                                        onChange={(e) => {
-                                                            setEditCategoryData({ ...editCategoryData, name: e.target.value });
-                                                            validateField('name', e.target.value, 'edit');
-                                                        }}
-                                                        className={`w-full border ${validationErrors.edit_name ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-200'} rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc8019]`}
-                                                    />
-                                                    {validationErrors.edit_name && (
-                                                        <p className="text-red-500 text-[10px] font-bold ml-1 uppercase">{validationErrors.edit_name}</p>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex justify-between items-center ml-1">
-                                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Description</label>
-                                                        <span className={`text-[10px] font-bold ${editCategoryData.description.length > DESCRIPTION_MAX ? 'text-red-500' : 'text-gray-400'}`}>
-                                                            {editCategoryData.description.length} / {DESCRIPTION_MAX}
-                                                        </span>
-                                                    </div>
-                                                    <textarea
-                                                        value={editCategoryData.description}
-                                                        onChange={(e) => {
-                                                            setEditCategoryData({ ...editCategoryData, description: e.target.value });
-                                                            validateField('description', e.target.value, 'edit');
-                                                        }}
-                                                        rows="2"
-                                                        className={`w-full border ${validationErrors.edit_description ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-200'} rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc8019] resize-none`}
-                                                    />
-                                                    {validationErrors.edit_description && (
-                                                        <p className="text-red-500 text-[10px] font-bold ml-1 uppercase">{validationErrors.edit_description}</p>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col gap-1">
-                                                    <label className="text-[10px] font-bold text-gray-400 ml-1">CHANGE IMAGE</label>
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    setEditCategoryData({ ...editCategoryData, image: file });
-                                                                    setEditCategoryImagePreview(URL.createObjectURL(file));
-                                                                }
-                                                            }}
-                                                            className="block w-full text-[10px] text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-orange-50 file:text-[#fc8019]"
-                                                        />
-                                                        {editCategoryImagePreview && (
-                                                            <img src={editCategoryImagePreview} alt="Preview" className="w-8 h-8 rounded-lg object-cover border shrink-0" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2 pt-2">
-                                                    <button
-                                                        onClick={() => updateCategory(category._id)}
-                                                        disabled={loading || !!validationErrors.edit_name || !!validationErrors.edit_description}
-                                                        className="flex-1 bg-[#fc8019] text-white py-2 rounded-xl text-xs font-bold hover:bg-[#e67315] transition-colors disabled:opacity-50"
-                                                    >
-                                                        {loading ? 'Saving...' : 'Update'}
-                                                    </button>
-                                                    <button
-                                                        onClick={cancelEditCategory}
-                                                        className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col h-full">
-                                                <div className="flex items-start gap-4 mb-4">
-                                                    <img
-                                                        src={getImageUrl(category.image)}
-                                                        alt={category.name}
-                                                        className="w-16 h-16 rounded-xl object-cover border border-white shadow-sm"
-                                                    />
-                                                    <div className="min-w-0">
-                                                        <h3 className="text-lg font-bold text-gray-900 truncate uppercase tracking-tight">{category.name}</h3>
-                                                        <p className="text-xs text-gray-500 line-clamp-2 mt-1 italic">
-                                                            {category.description || 'No description provided.'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-auto flex gap-2 pt-4 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => startEditCategory(category)}
-                                                        className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => deleteCategory(category._id)}
-                                                        className="flex-1 bg-red-50 text-red-600 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -837,7 +507,7 @@ const SuperAdminDashboard = () => {
                                         placeholder="Search by name or email..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="border border-gray-300 rounded-xl px-3 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+                                        className={`border ${error === 'Please enter a valid Name or Email address' ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-3 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
                                     />
                                 </div>
                             </div>
@@ -863,7 +533,10 @@ const SuperAdminDashboard = () => {
                                                             user.role === 'deliveryBoy' ? 'bg-purple-100 text-purple-800' :
                                                             'bg-gray-100 text-gray-800'
                                                         }`}>
-                                                            {user.role}
+                                                            {user.role === 'user' ? 'User' : 
+                                                             user.role === 'owner' ? 'Owner' : 
+                                                             user.role === 'deliveryBoy' ? 'Delivery Boy' : 
+                                                             user.role}
                                                         </span>
                                                         {user.role === 'owner' && (
                                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -890,21 +563,59 @@ const SuperAdminDashboard = () => {
                             {/* Add User Type Form */}
                             <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-6 mb-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Add New User Type</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input
-                                        type="text"
-                                        placeholder="User Type Name"
-                                        value={newUserType.name}
-                                        onChange={(e) => setNewUserType({ ...newUserType, name: e.target.value })}
-                                        className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Description"
-                                        value={newUserType.description}
-                                        onChange={(e) => setNewUserType({ ...newUserType, description: e.target.value })}
-                                        className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-xs font-bold text-gray-500 ml-1">USER TYPE NAME</label>
+                                        <input
+                                            type="text"
+                                            placeholder="User Type Name (e.g. Students)"
+                                            value={newUserType.name}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setNewUserType({ ...newUserType, name: val });
+                                                
+                                                // Real-time validation
+                                                let errors = { ...validationErrors };
+                                                const alphaRegex = /^[A-Za-z\s]+$/;
+                                                if (val && (!alphaRegex.test(val) || val.trim().length < 3 || val.trim().length > 50)) {
+                                                    errors.ut_name = "Input must be 3–50 letters only";
+                                                } else {
+                                                    delete errors.ut_name;
+                                                }
+                                                setValidationErrors(errors);
+                                            }}
+                                            className={`border ${validationErrors.ut_name ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
+                                        />
+                                        {validationErrors.ut_name && (
+                                            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase tracking-wider">{validationErrors.ut_name}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-xs font-bold text-gray-500 ml-1">DESCRIPTION</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Description (e.g. University Students)"
+                                            value={newUserType.description}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setNewUserType({ ...newUserType, description: val });
+                                                
+                                                // Real-time validation
+                                                let errors = { ...validationErrors };
+                                                const alphaRegex = /^[A-Za-z\s]+$/;
+                                                if (val && (!alphaRegex.test(val) || val.trim().length < 3 || val.trim().length > 50)) {
+                                                    errors.ut_desc = "Input must be 3–50 letters only";
+                                                } else {
+                                                    delete errors.ut_desc;
+                                                }
+                                                setValidationErrors(errors);
+                                            }}
+                                            className={`border ${validationErrors.ut_desc ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
+                                        />
+                                        {validationErrors.ut_desc && (
+                                            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase tracking-wider">{validationErrors.ut_desc}</p>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="mt-4 flex items-center">
                                     <input
@@ -920,8 +631,8 @@ const SuperAdminDashboard = () => {
                                 </div>
                                 <button
                                     onClick={createUserType}
-                                    disabled={loading}
-                                    className="mt-4 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] hover:from-[#e67315] hover:to-[#e62579] text-white px-4 py-2 rounded-xl font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-60"
+                                    disabled={loading || !!validationErrors.ut_name || !!validationErrors.ut_desc || !newUserType.name.trim() || !newUserType.description.trim()}
+                                    className="mt-6 bg-gradient-to-r from-[#fc8019] to-[#ff2b85] hover:from-[#e67315] hover:to-[#e62579] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
                                 >
                                     Add User Type
                                 </button>

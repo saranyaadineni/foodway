@@ -266,45 +266,45 @@ function OwnerDashboard() {
                 </button>
               </div>
 
-              {/* Shop Status and Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-10">
                 {/* Shop Status */}
-                <div className="bg-white rounded-xl p-5 shadow border border-gray-100 flex justify-between items-center">
+                <div className="bg-white/80 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between min-h-[160px]">
                   <div>
-                    <p className="text-gray-600 text-sm">Shop Status</p>
-                    <h3 className={`text-lg font-semibold ${myShopData.isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Shop Status</h3>
+                    <p className={`text-2xl font-black ${myShopData.isOpen ? 'text-green-500' : 'text-red-500'} mb-2`}>
                       {myShopData.isOpen ? 'Online' : 'Offline'}
-                    </h3>
+                    </p>
                   </div>
-                  <button
-                    onClick={handleShopStatusToggle}
-                    disabled={isUpdatingStatus}
-                    className={`${isUpdatingStatus
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:scale-110 transition-transform'
-                      }`}
-                  >
-                    {myShopData.isOpen ? (
-                      <FaToggleOn className="text-green-500 text-4xl" />
-                    ) : (
-                      <FaToggleOff className="text-gray-400 text-4xl" />
-                    )}
-                  </button>
+                  <div className="flex justify-end">
+                    <label className="relative inline-flex items-center cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer"
+                        checked={myShopData.isOpen}
+                        onChange={handleShopStatusToggle}
+                        disabled={isUpdatingStatus}
+                      />
+                      <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
+                    </label>
+                  </div>
                 </div>
 
-                {/* Rating */}
-                <div className="bg-white rounded-xl p-5 shadow border border-gray-100 text-center">
-                  <p className="text-sm text-gray-600">Average Rating</p>
-                  <p className="text-3xl font-bold text-[#ff4d2d] mt-1">
-                    {Number(myShopData?.rating?.average || 0).toFixed(1)}
-                  </p>
-                  <p className="text-xs text-gray-500">from {myShopData?.rating?.count || 0} reviews</p>
+                {/* Average Rating */}
+                <div className="bg-white/80 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col items-center justify-center text-center min-h-[160px]">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Average Rating</h3>
+                  <div className="flex flex-col items-center">
+                    <p className="text-4xl font-black text-orange-500">
+                      {Number(myShopData?.rating?.average || 0).toFixed(1)}
+                    </p>
+                    <p className="text-[10px] font-bold text-gray-400 mt-1">from {myShopData?.rating?.count || 0} reviews</p>
+                  </div>
                 </div>
 
-                {/* Item Count */}
-                <div className="bg-white rounded-xl p-5 shadow border border-gray-100 text-center">
-                  <p className="text-sm text-gray-600">Total Menu Items</p>
-                  <p className="text-3xl font-bold text-[#ff4d2d] mt-1">{myShopData.items.length}</p>
+                {/* Total Menu Items */}
+                <div className="bg-white/80 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col items-center justify-center text-center min-h-[160px]">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Total Menu Items</h3>
+                  <p className="text-5xl font-black text-[#ff2b85]">{myShopData.items.length}</p>
                 </div>
               </div>
 

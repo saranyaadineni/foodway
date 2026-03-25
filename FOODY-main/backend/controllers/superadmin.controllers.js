@@ -346,11 +346,29 @@ export const createUserType = async (req, res) => {
     try {
         const { name, description, deliveryAllowed } = req.body;
     
-        // Validate and normalize name
+        // --- Backend Validation ---
         const normalizedName = (name || "").trim();
+        const normalizedDesc = (description || "").trim();
+
+        // Regex: Only alphabets and spaces
+        const alphaRegex = /^[A-Za-z\s]+$/;
+
+        // Name validation
         if (!normalizedName) {
             return res.status(400).json({ message: "Name is required" });
         }
+        if (!alphaRegex.test(normalizedName) || normalizedName.length < 3 || normalizedName.length > 50) {
+            return res.status(400).json({ message: "User Type Name must be 3–50 letters only" });
+        }
+
+        // Description validation
+        if (!normalizedDesc) {
+            return res.status(400).json({ message: "Description is required" });
+        }
+        if (!alphaRegex.test(normalizedDesc) || normalizedDesc.length < 3 || normalizedDesc.length > 50) {
+            return res.status(400).json({ message: "Description must be 3–50 letters only" });
+        }
+        // --- End Validation ---
     
         const nameRegex = new RegExp(`^${normalizedName}$`, 'i');
     
@@ -363,7 +381,7 @@ export const createUserType = async (req, res) => {
         // If an INACTIVE user type exists, restore it instead of creating a new one
         const existingInactive = await UserType.findOne({ name: nameRegex, isActive: false });
         if (existingInactive) {
-            existingInactive.description = description ?? existingInactive.description;
+            existingInactive.description = normalizedDesc;
             if (typeof deliveryAllowed === 'boolean') {
                 existingInactive.deliveryAllowed = deliveryAllowed;
             }
@@ -375,7 +393,7 @@ export const createUserType = async (req, res) => {
         // Otherwise, create brand new
         const userType = await UserType.create({
             name: normalizedName,
-            description,
+            description: normalizedDesc,
             deliveryAllowed
         });
         res.status(201).json(userType);

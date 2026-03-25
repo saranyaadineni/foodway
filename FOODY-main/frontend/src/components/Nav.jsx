@@ -186,6 +186,77 @@ function Nav() {
     }
   };
 
+  const ProfileDropdown = () => (
+    <div className="absolute top-[55px] right-0 bg-white shadow-2xl border border-gray-100 rounded-2xl p-2 flex flex-col gap-1 w-[220px] animate-fade-in z-[10000]">
+      <div className="px-4 py-3 mb-1 border-b border-gray-50">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Logged in as</p>
+        <p className="font-bold text-gray-800 truncate">{userData.fullName}</p>
+        <p className="text-[10px] font-semibold text-[#fc8019] mt-0.5 px-2 py-0.5 bg-orange-50 rounded-full inline-block">
+          {userData.role === 'deliveryBoy' ? 'Delivery Boy' : userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+        </p>
+      </div>
+
+      {userData.role === "user" && (
+        <div
+          onClick={() => {
+            navigate("/my-orders");
+            setShowInfo(false);
+          }}
+          className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
+        >
+          <TbReceipt2 size={18} className="text-gray-400" />
+          My Orders
+        </div>
+      )}
+
+      {userData.role === "owner" && (
+        <>
+          <div
+            onClick={() => {
+              dispatch(setActiveTab('dashboard'));
+              navigate("/");
+              setShowInfo(false);
+            }}
+            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
+          >
+            <FaStore size={18} className="text-gray-400" />
+            Dashboard
+          </div>
+          <div
+            onClick={() => {
+              dispatch(setActiveTab('menu'));
+              navigate("/");
+              setShowInfo(false);
+            }}
+            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
+          >
+            <FaUtensils size={18} className="text-gray-400" />
+            Menu Items
+          </div>
+          <div
+            onClick={() => {
+              dispatch(setActiveTab('categories'));
+              navigate("/");
+              setShowInfo(false);
+            }}
+            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
+          >
+            <FaList size={18} className="text-gray-400" />
+            Categories
+          </div>
+        </>
+      )}
+
+      <div
+        onClick={handleLogOut}
+        className="px-4 py-2.5 text-red-500 font-semibold cursor-pointer hover:bg-red-50 transition-all text-sm flex items-center gap-3 mt-1 border-t border-gray-50 pt-3 rounded-xl"
+      >
+        <FiUser size={18} />
+        Log Out
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed top-0 left-0 w-full h-[70px] bg-white border-b border-gray-200 shadow-sm z-[9999] flex items-center justify-between px-4 sm:px-8 transition-all">
       {/* Left Section */}
@@ -260,14 +331,17 @@ function Nav() {
               </div>
               
               {isLoggedIn ? (
-                <div
-                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
-                  onClick={() => setShowInfo((prev) => !prev)}
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs">
-                    {userData?.fullName?.slice(0, 1).toUpperCase()}
+                <div className="relative">
+                  <div
+                    className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+                    onClick={() => setShowInfo((prev) => !prev)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs">
+                      {userData?.fullName?.slice(0, 1).toUpperCase()}
+                    </div>
+                    <span>{userData?.fullName?.split(" ")[0]}</span>
                   </div>
-                  <span>{userData?.fullName?.split(" ")[0]}</span>
+                  {showInfo && <ProfileDropdown />}
                 </div>
               ) : (
                 <div 
@@ -313,11 +387,14 @@ function Nav() {
                 </div>
               )}
               {isLoggedIn ? (
-                <div
-                  className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs cursor-pointer"
-                  onClick={() => setShowInfo((prev) => !prev)}
-                >
-                  {userData?.fullName?.slice(0, 1).toUpperCase()}
+                <div className="relative">
+                  <div
+                    className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs cursor-pointer"
+                    onClick={() => setShowInfo((prev) => !prev)}
+                  >
+                    {userData?.fullName?.slice(0, 1).toUpperCase()}
+                  </div>
+                  {showInfo && <ProfileDropdown />}
                 </div>
               ) : (
                 <FiUser 
@@ -457,69 +534,7 @@ function Nav() {
                   <span className="hidden sm:inline">{userData?.fullName?.split(" ")[0]}</span>
                 </div>
 
-                {showInfo && (
-                  <div className="absolute top-[55px] right-0 bg-white/90 backdrop-blur-2xl shadow-2xl border border-white/40 rounded-2xl p-4 flex flex-col gap-3 w-[200px] animate-fade-in z-[10000]">
-                    <div className="font-semibold text-gray-800 text-center border-b border-gray-100 pb-2">
-                      {userData.fullName}
-                    </div>
-                    {userData.role === "user" && (
-                      <div
-                        onClick={() => {
-                          navigate("/my-orders");
-                          setShowInfo(false);
-                        }}
-                        className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
-                      >
-                        <TbReceipt2 size={18} />
-                        My Orders
-                      </div>
-                    )}
-                    {userData.role === "owner" && (
-                      <>
-                        <div
-                          onClick={() => {
-                            dispatch(setActiveTab('dashboard'));
-                            navigate("/");
-                            setShowInfo(false);
-                          }}
-                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
-                        >
-                          <FaStore size={18} />
-                          Dashboard
-                        </div>
-                        <div
-                          onClick={() => {
-                            dispatch(setActiveTab('menu'));
-                            navigate("/");
-                            setShowInfo(false);
-                          }}
-                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
-                        >
-                          <FaUtensils size={18} />
-                          Menu Items
-                        </div>
-                        <div
-                          onClick={() => {
-                            dispatch(setActiveTab('categories'));
-                            navigate("/");
-                            setShowInfo(false);
-                          }}
-                          className="text-gray-700 font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2"
-                        >
-                          <FaList size={18} />
-                          Categories
-                        </div>
-                      </>
-                    )}
-                    <div
-                      onClick={handleLogOut}
-                      className="text-[#ff2b85] font-medium cursor-pointer hover:text-[#fc8019] transition-all text-sm flex items-center gap-2 border-t border-gray-100 pt-2"
-                    >
-                      <FiUser size={18} />
-                      Log Out
-                    </div>
-                  </div>
-                )}
+                {showInfo && <ProfileDropdown />}
               </div>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">

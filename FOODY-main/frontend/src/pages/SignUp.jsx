@@ -253,22 +253,26 @@ function SignUp() {
 
         {/* Role Selector */}
         <div className="mb-5">
-          <label className="block text-gray-700 font-semibold mb-1 text-sm">
+          <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider">
             Select Role
           </label>
           <div className="flex gap-2">
-            {["user", "owner", "deliveryBoy"].map((r) => (
+            {[
+              { id: 'user', label: 'User' },
+              { id: 'owner', label: 'Owner' },
+              { id: 'deliveryBoy', label: 'Delivery Boy' }
+            ].map((r) => (
               <button
-                key={r}
+                key={r.id}
                 type="button"
-                onClick={() => setRole(r)}
-                className={`flex-1 py-2.5 rounded-xl font-semibold border transition-all duration-200 ${
-                  role === r
-                    ? "bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white"
+                onClick={() => setRole(r.id)}
+                className={`flex-1 py-2.5 rounded-xl font-bold border transition-all duration-200 text-sm ${
+                  role === r.id
+                    ? "bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white shadow-md"
                     : "border-[#ff2b85] text-[#ff2b85] hover:bg-[#fff1f5]"
                 }`}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>

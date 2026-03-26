@@ -14,24 +14,28 @@ function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const validateFields = () => {
+    let errors = {};
+    if (!email || !email.trim()) {
+      errors.email = "Please fill out this field";
+    }
+    if (!password || !password.trim()) {
+      errors.password = "Please fill out this field";
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSignIn = async () => {
-    if (!email && !password) {
-      setErr("Please fill out all required fields");
-      return;
-    }
-    if (!email) {
-      setErr("Email is required");
-      return;
-    }
-    if (!password) {
-      setErr("Password is required");
+    setErr("");
+    if (!validateFields()) {
       return;
     }
 
     setLoading(true);
-    setErr("");
     try {
       const result = await authAPI.signin({ email, password });
       if (result.status === 200) {
@@ -76,10 +80,18 @@ function SignIn() {
             type="email"
             placeholder="example@email.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, email: "" }));
+            }}
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+            className={`w-full border ${fieldErrors.email ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
           />
+          {fieldErrors.email && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         {/* Password */}
@@ -92,9 +104,12 @@ function SignIn() {
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, password: "" }));
+              }}
               required
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-10 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all"
+              className={`w-full border ${fieldErrors.password ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-2.5 pr-10 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all`}
             />
             <button
               type="button"
@@ -104,6 +119,11 @@ function SignIn() {
               {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
             </button>
           </div>
+          {fieldErrors.password && (
+            <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">
+              {fieldErrors.password}
+            </p>
+          )}
         </div>
 
         {/* Forgot Password */}

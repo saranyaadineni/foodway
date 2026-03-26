@@ -142,7 +142,7 @@ function Shop() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='min-h-screen bg-gray-50 pt-[70px]'>
         <Nav />
       {shop && <div className='relative w-full h-64 md:h-80 lg:h-96'>
           <img src={getImageUrl(shop.image)} alt="" className='w-full h-full object-cover'/>

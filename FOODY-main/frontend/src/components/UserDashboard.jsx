@@ -149,7 +149,7 @@ function UserDashboard() {
               Order from top restaurants near you in minutes
             </h1>
             <p className="text-sm md:text-base text-gray-600 max-w-md">
-              Explore nearby favourites, trending dishes and late-night cravings, all in one place.
+              Explore nearby favorites, trending dishes and late-night cravings, all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
               <button
@@ -305,6 +305,7 @@ function UserDashboard() {
                 name={shop.name}
                 image={shop.image}
                 isOpen={shop.isOpen}
+                shopId={shop._id}
                 onClick={() =>
                   navigate(`/shop/${shop._id}`)
                 }
@@ -334,7 +335,7 @@ function UserDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center sm:justify-items-start">
           {topRatedItems.length > 0 ? (
             topRatedItems.map((item) => (
-              <FoodCard key={item._id} data={item} hideFooter={true} />
+              <FoodCard key={item._id} data={item} hideFooter={false} />
             ))
           ) : (
             <div className="w-full text-center py-10 col-span-full">

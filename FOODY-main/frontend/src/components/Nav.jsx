@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FaLocationDot, FaPlus, FaStore, FaList, FaUtensils } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import { FiShoppingCart, FiHelpCircle, FiUser } from "react-icons/fi";
@@ -31,9 +31,23 @@ function Nav() {
   const [locationResults, setLocationResults] = useState([]);
   const [locationResultsLoading, setLocationResultsLoading] = useState(false);
 
+  const profileRef = useRef(null);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowInfo(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const isUser = userData?.role === "user";
   const isOwner = userData?.role === "owner";
@@ -257,6 +271,23 @@ function Nav() {
     </div>
   );
 
+  const UserProfile = () => (
+    <div className="relative" ref={profileRef}>
+      <div
+        className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+        onClick={() => setShowInfo((prev) => !prev)}
+      >
+        <div className="w-[35px] h-[35px] sm:w-[40px] sm:h-[40px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md border-2 border-white">
+          {userData?.fullName?.slice(0, 1).toUpperCase()}
+        </div>
+        <span className="hidden sm:inline font-bold text-gray-800 tracking-tight">
+          {userData?.fullName?.split(" ")[0]}
+        </span>
+      </div>
+      {showInfo && <ProfileDropdown />}
+    </div>
+  );
+
   return (
     <div className="fixed top-0 left-0 w-full h-[70px] bg-white border-b border-gray-200 shadow-sm z-[9999] flex items-center justify-between px-4 sm:px-8 transition-all">
       {/* Left Section */}
@@ -331,18 +362,7 @@ function Nav() {
               </div>
               
               {isLoggedIn ? (
-                <div className="relative">
-                  <div
-                    className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
-                    onClick={() => setShowInfo((prev) => !prev)}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs">
-                      {userData?.fullName?.slice(0, 1).toUpperCase()}
-                    </div>
-                    <span>{userData?.fullName?.split(" ")[0]}</span>
-                  </div>
-                  {showInfo && <ProfileDropdown />}
-                </div>
+                <UserProfile />
               ) : (
                 <div 
                 className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
@@ -387,15 +407,7 @@ function Nav() {
                 </div>
               )}
               {isLoggedIn ? (
-                <div className="relative">
-                  <div
-                    className="w-8 h-8 rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center text-xs cursor-pointer"
-                    onClick={() => setShowInfo((prev) => !prev)}
-                  >
-                    {userData?.fullName?.slice(0, 1).toUpperCase()}
-                  </div>
-                  {showInfo && <ProfileDropdown />}
-                </div>
+                <UserProfile />
               ) : (
                 <FiUser 
                   size={22} 
@@ -492,7 +504,7 @@ function Nav() {
             ) : (
               <>
                 {/* Cart */}
-                {(isLoggedIn || location.pathname === "/search") && (isUser || !isLoggedIn) && (location.pathname === "/search" || location.pathname === "/") && (
+                {(isLoggedIn || location.pathname === "/search") && (isUser || !isLoggedIn) && (location.pathname === "/search" || location.pathname === "/" || location.pathname.startsWith("/shop/") || location.pathname.startsWith("/collection/")) && (
                   <div
                     className="flex items-center gap-2 cursor-pointer hover:text-[#fc8019] transition-colors relative group"
                     onClick={() => navigate("/cart")}
@@ -523,19 +535,7 @@ function Nav() {
             )}
 
             {isLoggedIn ? (
-              <div className="relative">
-                <div
-                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
-                  onClick={() => setShowInfo((prev) => !prev)}
-                >
-                  <div className="w-[40px] h-[40px] sm:w-[42px] sm:h-[42px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md">
-                    {userData?.fullName?.slice(0, 1).toUpperCase()}
-                  </div>
-                  <span className="hidden sm:inline">{userData?.fullName?.split(" ")[0]}</span>
-                </div>
-
-                {showInfo && <ProfileDropdown />}
-              </div>
+              <UserProfile />
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">
                 <button

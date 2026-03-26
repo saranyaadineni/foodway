@@ -24,15 +24,90 @@ function CreateEditShop() {
   const [upiVpa, setUpiVpa] = useState(myShopData?.upiVpa || "");
   const [upiPayeeName, setUpiPayeeName] = useState(myShopData?.upiPayeeName || "");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validateField = (fieldName, value) => {
+    let errors = { ...fieldErrors };
+    
+    if (fieldName === "name") {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        errors.name = "Shop name is required";
+      } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
+        errors.name = "Please enter a valid shop name (letters only)";
+      } else if (trimmed.length < 3 || trimmed.length > 50) {
+        errors.name = "Shop name must be between 3 and 50 characters";
+      } else {
+        delete errors.name;
+      }
+    }
+
+    if (fieldName === "upiPayeeName") {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        errors.upiPayeeName = "Payee name is required";
+      } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
+        errors.upiPayeeName = "Enter a valid payee name";
+      } else {
+        delete errors.upiPayeeName;
+      }
+    }
+
+    if (fieldName === "city") {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        errors.city = "City is required";
+      } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
+        errors.city = "Enter a valid city name";
+      } else {
+        delete errors.city;
+      }
+    }
+
+    if (fieldName === "image") {
+      if (!value && !myShopData) {
+        errors.image = "Shop image is required";
+      } else {
+        delete errors.image;
+      }
+    }
+
+    if (["city", "state", "address"].includes(fieldName)) {
+      if (!value || !value.trim()) {
+        errors[fieldName] = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+      } else {
+        delete errors[fieldName];
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleImage = (e) => {
     const file = e.target.files[0];
-    setBackendImage(file);
-    setFrontendImage(URL.createObjectURL(file));
+    if (file) {
+      setBackendImage(file);
+      setFrontendImage(URL.createObjectURL(file));
+      validateField("image", file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Final validation check
+    const isNameValid = validateField("name", name);
+    const isCityValid = validateField("city", city);
+    const isStateValid = validateField("state", state);
+    const isAddressValid = validateField("address", address);
+    const isImageValid = validateField("image", backendImage);
+    const isPayeeValid = validateField("upiPayeeName", upiPayeeName);
+
+    if (!isNameValid || !isCityValid || !isStateValid || !isAddressValid || !isImageValid || !isPayeeValid) {
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();
@@ -89,36 +164,50 @@ function CreateEditShop() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           {/* Shop Name */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-1 text-sm">
-              Shop Name
+            <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider">
+              Shop Name <span className="text-[#ff2b85]">*</span>
             </label>
             <input
               type="text"
               placeholder="Enter shop name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                validateField("name", e.target.value);
+              }}
               required
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+              className={`w-full border ${fieldErrors.name ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
             />
+            {fieldErrors.name && (
+              <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.name}</p>
+            )}
           </div>
 
           {/* Image Upload */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-1 text-sm">
-              Shop Image
+            <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider">
+              Shop Image <span className="text-[#ff2b85]">*</span>
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImage}
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all"
-            />
+            <div className="relative group">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImage}
+                className={`w-full border ${fieldErrors.image ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-[#fc8019] hover:file:bg-orange-100 cursor-pointer`}
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1 font-medium italic">
+                {backendImage ? `Selected: ${backendImage.name}` : "No file chosen"}
+              </p>
+            </div>
+            {fieldErrors.image && (
+              <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.image}</p>
+            )}
             {frontendImage && (
-              <div className="mt-4">
+              <div className="mt-4 animate-fade-in">
                 <img
                   src={frontendImage}
                   alt="Shop Preview"
-                  className="w-full h-48 object-cover rounded-lg border shadow-md"
+                  className="w-full h-48 object-cover rounded-2xl border-2 border-white shadow-xl"
                 />
               </div>
             )}
@@ -127,7 +216,7 @@ function CreateEditShop() {
           {/* UPI Section */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 font-semibold mb-1 text-sm">
+              <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider text-[11px]">
                 UPI ID (VPA)
               </label>
               <input
@@ -135,73 +224,98 @@ function CreateEditShop() {
                 placeholder="e.g. 9876543210@ybl"
                 value={upiVpa}
                 onChange={(e) => setUpiVpa(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all text-sm"
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-1 text-sm">
-                Payee Name
+              <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider text-[11px]">
+                Payee Name <span className="text-[#ff2b85]">*</span>
               </label>
               <input
                 type="text"
                 placeholder="e.g. John Doe"
                 value={upiPayeeName}
-                onChange={(e) => setUpiPayeeName(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all"
+                onChange={(e) => {
+                  setUpiPayeeName(e.target.value);
+                  validateField("upiPayeeName", e.target.value);
+                }}
+                required
+                className={`w-full border ${fieldErrors.upiPayeeName ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all text-sm`}
               />
+              {fieldErrors.upiPayeeName && (
+                <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.upiPayeeName}</p>
+              )}
             </div>
           </div>
 
           {/* Address Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 font-semibold mb-1 text-sm">
-                City
+              <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider text-[11px]">
+                City <span className="text-[#ff2b85]">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter city"
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  validateField("city", e.target.value);
+                }}
                 required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all"
+                className={`w-full border ${fieldErrors.city ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all text-sm`}
               />
+              {fieldErrors.city && (
+                <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.city}</p>
+              )}
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-1 text-sm">
-                State
+              <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider text-[11px]">
+                State <span className="text-[#ff2b85]">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter state"
                 value={state}
-                onChange={(e) => setState(e.target.value)}
+                onChange={(e) => {
+                  setState(e.target.value);
+                  validateField("state", e.target.value);
+                }}
                 required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all"
+                className={`w-full border ${fieldErrors.state ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] transition-all text-sm`}
               />
+              {fieldErrors.state && (
+                <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.state}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-1 text-sm">
-              Address
+            <label className="block text-gray-700 font-semibold mb-1 text-sm uppercase tracking-wider">
+              Address <span className="text-[#ff2b85]">*</span>
             </label>
             <input
               type="text"
               placeholder="Enter full shop address"
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                validateField("address", e.target.value);
+              }}
               required
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all"
+              className={`w-full border ${fieldErrors.address ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#fc8019] transition-all text-sm`}
             />
+            {fieldErrors.address && (
+              <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.address}</p>
+            )}
           </div>
 
           {/* Submit */}
           <button
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60"
+            disabled={loading || Object.keys(fieldErrors).length > 0}
+            className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed"
           >
-            {loading ? <ClipLoader size={22} color="white" /> : "Save"}
+            {loading ? <ClipLoader size={22} color="white" /> : "Save Details"}
           </button>
         </form>
       </div>

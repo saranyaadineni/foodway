@@ -14,6 +14,39 @@ export const createEditShop = async (req, res) => {
   try {
     const { name, city, state, address, upiVpa, upiPayeeName } = req.body;
 
+    // --- Backend Validation ---
+    const shopName = name?.trim();
+    const alphaRegex = /^[A-Za-z\s]+$/;
+
+    if (!shopName) {
+      return res.status(400).json({ message: "Shop name is required" });
+    }
+    // Only alphabets and spaces, 3-50 chars
+    if (!alphaRegex.test(shopName) || shopName.length < 3 || shopName.length > 50) {
+      return res.status(400).json({ message: "Please enter a valid shop name (3-50 letters only)" });
+    }
+
+    // Payee Name Validation (TC_018, TC_019)
+    const payee = upiPayeeName?.trim();
+    if (!payee) {
+      return res.status(400).json({ message: "Payee name is required" });
+    }
+    if (!alphaRegex.test(payee)) {
+      return res.status(400).json({ message: "Enter a valid payee name" });
+    }
+
+    // City Validation (TC_020)
+    const cityName = city?.trim();
+    if (!cityName) {
+      return res.status(400).json({ message: "City is required" });
+    }
+    if (!alphaRegex.test(cityName)) {
+      return res.status(400).json({ message: "Enter a valid city name" });
+    }
+
+    if (!state || !state.trim()) return res.status(400).json({ message: "State is required" });
+    if (!address || !address.trim()) return res.status(400).json({ message: "Address is required" });
+
     let image;
     if (req.file) {
       image = await uploadToCloudinary(req.file);
@@ -21,8 +54,13 @@ export const createEditShop = async (req, res) => {
 
     let shop = await Shop.findOne({ owner: req.userId });
 
+    // For new shop, image is mandatory
+    if (!shop && !image) {
+      return res.status(400).json({ message: "Shop image is required" });
+    }
+
     const payload = {
-      name: name?.trim(),
+      name: shopName,
       city: normalize(city),
       state: normalize(state),
       address: address?.trim(),

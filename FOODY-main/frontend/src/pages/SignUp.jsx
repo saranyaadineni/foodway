@@ -30,7 +30,7 @@ function SignUp() {
       if (!value || !value.trim()) {
         errors.fullName = "Full name is required";
       } else if (!/^[A-Za-z\s]+$/.test(value)) {
-        errors.fullName = "Full name must contain only letters";
+        errors.fullName = "Enter a valid full name (alphabets and spaces only)";
       } else if (value.trim().length < 3 || value.trim().length > 50) {
         errors.fullName = "Full name must be between 3 and 50 characters";
       } else {
@@ -43,7 +43,7 @@ function SignUp() {
       if (!value || !value.trim()) {
         errors.email = "Email is required";
       } else if (!emailRegex.test(value)) {
-        errors.email = "Please enter a valid email address";
+        errors.email = "Enter a valid email address";
       } else if (value.length > 100) {
         errors.email = "Email is too long";
       } else {
@@ -63,15 +63,20 @@ function SignUp() {
     }
 
     if (name === "password") {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
       if (!value) {
         errors.password = "Password is required";
-      } else if (value.length < 8) {
-        errors.password = "Password must be at least 8 characters long";
-      } else if (!passwordRegex.test(value)) {
-        errors.password = "Must include uppercase, lowercase, numbers, and symbols";
+      } else if (value.length < 6) {
+        errors.password = "Password must be at least 6 characters";
       } else {
         delete errors.password;
+      }
+    }
+
+    if (name === "userType") {
+      if (role === "user" && (!value || value === "")) {
+        errors.userType = "Please select user type";
+      } else {
+        delete errors.userType;
       }
     }
 
@@ -84,9 +89,6 @@ function SignUp() {
       try {
         const response = await authAPI.getUserTypes();
         setUserTypes(response.data);
-        if (response.data.length > 0) {
-          setUserType(response.data[0].name);
-        }
       } catch (error) {
         console.error("Error fetching user types:", error);
       }
@@ -100,8 +102,9 @@ function SignUp() {
     const isEmailValid = validateField("email", email);
     const isMobileValid = validateField("mobile", mobile);
     const isPasswordValid = validateField("password", password);
+    const isUserTypeValid = role === "user" ? validateField("userType", userType) : true;
 
-    if (!isNameValid || !isEmailValid || !isMobileValid || !isPasswordValid) {
+    if (!isNameValid || !isEmailValid || !isMobileValid || !isPasswordValid || !isUserTypeValid) {
       setErr("Please fix the validation errors before signing up");
       return;
     }
@@ -265,7 +268,16 @@ function SignUp() {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setRole(r.id)}
+                onClick={() => {
+                  setRole(r.id);
+                  if (r.id !== "user") {
+                    setFieldErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.userType;
+                      return newErrors;
+                    });
+                  }
+                }}
                 className={`flex-1 py-2.5 rounded-xl font-bold border transition-all duration-200 text-sm ${
                   role === r.id
                     ? "bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white shadow-md"
@@ -286,9 +298,12 @@ function SignUp() {
             </label>
             <select
               value={userType}
-              onChange={(e) => setUserType(e.target.value)}
+              onChange={(e) => {
+                setUserType(e.target.value);
+                validateField("userType", e.target.value);
+              }}
               required
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all"
+              className={`w-full border ${fieldErrors.userType ? 'border-red-500' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
             >
               <option value="">Select User Type</option>
               {userTypes.map((type) => (
@@ -300,6 +315,9 @@ function SignUp() {
                 </option>
               ))}
             </select>
+            {fieldErrors.userType && (
+              <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.userType}</p>
+            )}
           </div>
         )}
 

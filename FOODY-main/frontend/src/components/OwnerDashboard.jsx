@@ -415,7 +415,7 @@ function OwnerDashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {myShopData.items.map((item, index) => (
-                    <OwnerItemCard key={index} data={item} />
+                    <OwnerItemCard key={index} data={item} showMessage={showMessage} />
                   ))}
                 </div>
               )}

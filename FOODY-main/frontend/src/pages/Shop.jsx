@@ -62,6 +62,22 @@ function Shop() {
     }, [socket, shopId, handleShop])
 
     useEffect(() => {
+        if (socket) {
+            socket.on('stockStatusUpdate', (data) => {
+                if (items.find(i => i._id === data.itemId)) {
+                    setItems(prevItems => prevItems.map(item => 
+                        item._id === data.itemId ? { ...item, stockStatus: data.stockStatus } : item
+                    ));
+                }
+            });
+
+            return () => {
+                socket.off('stockStatusUpdate');
+            };
+        }
+    }, [socket, items]);
+
+    useEffect(() => {
         handleShop()
     }, [handleShop])
     

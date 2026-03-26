@@ -6,26 +6,29 @@ export const addItem = async (req, res) => {
     try {
         const { name, category, foodType, price, preparationTime, stockStatus, hasOffer, offerPercentage } = req.body
         
-        // Validate required fields
-        if (!name || !category || !foodType || !price) {
-            return res.status(400).json({ message: "All fields (name, category, foodType, price) are required" })
+        // --- Backend Validation ---
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: "Food name is required" });
+        }
+        if (!category) {
+            return res.status(400).json({ message: "Please select a category" });
+        }
+        if (!foodType || !["veg", "non veg"].includes(foodType)) {
+            return res.status(400).json({ message: "Please select a valid food type" });
+        }
+        if (!price || isNaN(price) || Number(price) <= 0) {
+            return res.status(400).json({ message: "Price must be a number greater than 0" });
+        }
+        if (!req.file) {
+            return res.status(400).json({ message: "Food image is required" });
         }
 
         let image;
-        const placeholderImage = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop";
-
-        if (req.file) {
-            try {
-                image = await uploadToCloudinary(req.file)
-            } catch (uploadError) {
-                console.error('Image upload error:', uploadError)
-                return res.status(400).json({ message: "Failed to upload image. Please try again." })
-            }
-        }
-        
-        // Use placeholder if no image was uploaded
-        if (!image) {
-            image = placeholderImage;
+        try {
+            image = await uploadToCloudinary(req.file)
+        } catch (uploadError) {
+            console.error('Image upload error:', uploadError)
+            return res.status(400).json({ message: "Failed to upload image. Please try again." })
         }
         
         const shop = await Shop.findOne({ owner: req.userId })
@@ -34,10 +37,10 @@ export const addItem = async (req, res) => {
         }
         
         const item = await Item.create({
-            name, 
+            name: name.trim(), 
             category, 
             foodType, 
-            price, 
+            price: Number(price), 
             image, 
             shop: shop._id,
             preparationTime: preparationTime ? Number(preparationTime) : 15,

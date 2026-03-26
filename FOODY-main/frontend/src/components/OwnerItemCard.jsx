@@ -12,11 +12,19 @@ function OwnerItemCard({data}) {
     const [isUpdatingStock, setIsUpdatingStock] = useState(false)
 
     const handleDelete=async () => {
-      try {
-        const result = await itemAPI.deleteItem(data._id)
-        dispatch(setMyShopData(result.data))
-      } catch (error) {
-        console.log(error)
+      if (window.confirm("Are you sure you want to delete this item?")) {
+        try {
+          const result = await itemAPI.deleteItem(data._id)
+          dispatch(setMyShopData(result.data))
+          if (showMessage) {
+            showMessage("Item deleted successfully", "success");
+          }
+        } catch (error) {
+          console.log(error)
+          if (showMessage) {
+            showMessage("Failed to delete item", "error");
+          }
+        }
       }
     }
 

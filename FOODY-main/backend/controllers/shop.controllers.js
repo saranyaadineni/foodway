@@ -44,8 +44,19 @@ export const createEditShop = async (req, res) => {
       return res.status(400).json({ message: "Enter a valid city name" });
     }
 
-    if (!state || !state.trim()) return res.status(400).json({ message: "State is required" });
-    if (!address || !address.trim()) return res.status(400).json({ message: "Address is required" });
+    // State Validation (TC_022, TC_023)
+    const stateName = state?.trim();
+    if (!stateName) {
+      return res.status(400).json({ message: "State is required" });
+    }
+    if (!alphaRegex.test(stateName)) {
+      return res.status(400).json({ message: "Enter a valid state name" });
+    }
+
+    // Address Validation (TC_025)
+    if (!address || !address.trim()) {
+      return res.status(400).json({ message: "Address is required" });
+    }
 
     let image;
     if (req.file) {

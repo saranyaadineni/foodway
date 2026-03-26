@@ -32,7 +32,7 @@ function CreateEditShop() {
     if (fieldName === "name") {
       const trimmed = (value || "").trim();
       if (!trimmed) {
-        errors.name = "Shop name is required";
+        errors.name = "Shop name cannot be empty";
       } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
         errors.name = "Please enter a valid shop name (letters only)";
       } else if (trimmed.length < 3 || trimmed.length > 50) {
@@ -64,19 +64,31 @@ function CreateEditShop() {
       }
     }
 
+    if (fieldName === "state") {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        errors.state = "State is required";
+      } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
+        errors.state = "Enter a valid state name";
+      } else {
+        delete errors.state;
+      }
+    }
+
+    if (fieldName === "address") {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        errors.address = "Address is required";
+      } else {
+        delete errors.address;
+      }
+    }
+
     if (fieldName === "image") {
       if (!value && !myShopData) {
         errors.image = "Shop image is required";
       } else {
         delete errors.image;
-      }
-    }
-
-    if (["city", "state", "address"].includes(fieldName)) {
-      if (!value || !value.trim()) {
-        errors[fieldName] = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
-      } else {
-        delete errors[fieldName];
       }
     }
 
@@ -195,20 +207,29 @@ function CreateEditShop() {
                 onChange={handleImage}
                 className={`w-full border ${fieldErrors.image ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-4 py-2.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] hover:border-[#ff4d2d]/60 transition-all text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-[#fc8019] hover:file:bg-orange-100 cursor-pointer`}
               />
-              <p className="text-[10px] text-gray-400 mt-1 ml-1 font-medium italic">
-                {backendImage ? `Selected: ${backendImage.name}` : "No file chosen"}
-              </p>
+              {backendImage ? (
+                <p className="text-[10px] text-green-500 mt-1 ml-1 font-bold animate-pulse">
+                  ✓ Selected: {backendImage.name}
+                </p>
+              ) : !frontendImage && (
+                <p className="text-[10px] text-gray-400 mt-1 ml-1 font-medium italic">
+                  No file chosen
+                </p>
+              )}
             </div>
             {fieldErrors.image && (
               <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.image}</p>
             )}
             {frontendImage && (
-              <div className="mt-4 animate-fade-in">
+              <div className="mt-4 animate-fade-in relative group">
                 <img
                   src={frontendImage}
                   alt="Shop Preview"
-                  className="w-full h-48 object-cover rounded-2xl border-2 border-white shadow-xl"
+                  className="w-full h-48 object-cover rounded-2xl border-2 border-white shadow-xl transition-all duration-300 group-hover:brightness-90"
                 />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <p className="bg-black/50 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md">Preview</p>
+                </div>
               </div>
             )}
           </div>
@@ -315,7 +336,7 @@ function CreateEditShop() {
             disabled={loading || Object.keys(fieldErrors).length > 0}
             className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed"
           >
-            {loading ? <ClipLoader size={22} color="white" /> : "Save Details"}
+            {loading ? <ClipLoader size={22} color="white" /> : (myShopData ? "Save Changes" : "Save Details")}
           </button>
         </form>
       </div>

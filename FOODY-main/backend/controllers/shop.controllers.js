@@ -3,9 +3,6 @@ import Item from "../models/item.model.js";
 import User from "../models/user.model.js";
 import uploadToCloudinary from "../utils/s3Upload.js";
 
-const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop";
-
 const normalize = (val = "") =>
   val.toString().trim().toLowerCase();
 
@@ -32,7 +29,7 @@ export const createEditShop = async (req, res) => {
       return res.status(400).json({ message: "Payee name is required" });
     }
     if (!alphaRegex.test(payee)) {
-      return res.status(400).json({ message: "Enter a valid payee name" });
+      return res.status(400).json({ message: "Invalid payee name" });
     }
 
     // City Validation (TC_020)
@@ -41,7 +38,7 @@ export const createEditShop = async (req, res) => {
       return res.status(400).json({ message: "City is required" });
     }
     if (!alphaRegex.test(cityName)) {
-      return res.status(400).json({ message: "Enter a valid city name" });
+      return res.status(400).json({ message: "Invalid city name" });
     }
 
     // State Validation (TC_022, TC_023)
@@ -50,7 +47,7 @@ export const createEditShop = async (req, res) => {
       return res.status(400).json({ message: "State is required" });
     }
     if (!alphaRegex.test(stateName)) {
-      return res.status(400).json({ message: "Enter a valid state name" });
+      return res.status(400).json({ message: "Invalid state name" });
     }
 
     // Address Validation (TC_025)
@@ -65,9 +62,9 @@ export const createEditShop = async (req, res) => {
 
     let shop = await Shop.findOne({ owner: req.userId });
 
-    // For new shop, image is mandatory
-    if (!shop && !image) {
-      return res.status(400).json({ message: "Shop image is required" });
+    // Image is mandatory for both creation and updates (if no image currently exists and no new image is provided)
+    if (!image && (!shop || !shop.image)) {
+      return res.status(400).json({ message: "Please upload shop image" });
     }
 
     const payload = {
@@ -82,7 +79,7 @@ export const createEditShop = async (req, res) => {
     if (!shop) {
       shop = await Shop.create({
         ...payload,
-        image: image || PLACEHOLDER_IMAGE,
+        image: image, // No fallback to PLACEHOLDER_IMAGE
         owner: req.userId,
         isOpen: true,
       });
@@ -135,12 +132,7 @@ export const getAllShops = async (_req, res) => {
       .populate("items")
       .lean();
 
-    return res.status(200).json(
-      shops.map((s) => ({
-        ...s,
-        image: s.image || PLACEHOLDER_IMAGE,
-      }))
-    );
+    return res.status(200).json(shops);
   } catch (error) {
     console.error("❌ getAllShops:", error);
     return res.status(500).json({ message: "Failed to fetch shops" });
@@ -166,7 +158,6 @@ export const getShopByCity = async (req, res) => {
       shops.map((shop) => ({
         ...shop,
         name: shop.name || "Unnamed Shop",
-        image: shop.image || PLACEHOLDER_IMAGE,
       }))
     );
   } catch (error) {

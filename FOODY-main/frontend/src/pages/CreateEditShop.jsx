@@ -26,8 +26,8 @@ function CreateEditShop() {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const validateField = (fieldName, value) => {
-    let errors = { ...fieldErrors };
+  const validateField = (fieldName, value, existingErrors = null) => {
+    let errors = existingErrors ? { ...existingErrors } : { ...fieldErrors };
     
     if (fieldName === "name") {
       const trimmed = (value || "").trim();
@@ -47,7 +47,7 @@ function CreateEditShop() {
       if (!trimmed) {
         errors.upiPayeeName = "Payee name is required";
       } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
-        errors.upiPayeeName = "Enter a valid payee name";
+        errors.upiPayeeName = "Invalid payee name";
       } else {
         delete errors.upiPayeeName;
       }
@@ -58,7 +58,7 @@ function CreateEditShop() {
       if (!trimmed) {
         errors.city = "City is required";
       } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
-        errors.city = "Enter a valid city name";
+        errors.city = "Invalid city name";
       } else {
         delete errors.city;
       }
@@ -69,7 +69,7 @@ function CreateEditShop() {
       if (!trimmed) {
         errors.state = "State is required";
       } else if (!/^[A-Za-z\s]+$/.test(trimmed)) {
-        errors.state = "Enter a valid state name";
+        errors.state = "Invalid state name";
       } else {
         delete errors.state;
       }
@@ -85,15 +85,17 @@ function CreateEditShop() {
     }
 
     if (fieldName === "image") {
-      if (!value && !myShopData) {
-        errors.image = "Shop image is required";
+      if (!value && !frontendImage) {
+        errors.image = "Please upload shop image";
       } else {
         delete errors.image;
       }
     }
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (!existingErrors) {
+      setFieldErrors(errors);
+    }
+    return errors;
   };
 
   const handleImage = (e) => {
@@ -105,18 +107,27 @@ function CreateEditShop() {
     }
   };
 
+  const removeImage = () => {
+    setBackendImage(null);
+    setFrontendImage(null);
+    validateField("image", null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Final validation check
-    const isNameValid = validateField("name", name);
-    const isCityValid = validateField("city", city);
-    const isStateValid = validateField("state", state);
-    const isAddressValid = validateField("address", address);
-    const isImageValid = validateField("image", backendImage);
-    const isPayeeValid = validateField("upiPayeeName", upiPayeeName);
+    // Final validation check - aggregate all errors
+    let errors = {};
+    errors = validateField("name", name, errors);
+    errors = validateField("city", city, errors);
+    errors = validateField("state", state, errors);
+    errors = validateField("address", address, errors);
+    errors = validateField("image", backendImage, errors);
+    errors = validateField("upiPayeeName", upiPayeeName, errors);
 
-    if (!isNameValid || !isCityValid || !isStateValid || !isAddressValid || !isImageValid || !isPayeeValid) {
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -227,6 +238,15 @@ function CreateEditShop() {
                   alt="Shop Preview"
                   className="w-full h-48 object-cover rounded-2xl border-2 border-white shadow-xl transition-all duration-300 group-hover:brightness-90"
                 />
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="bg-red-500/80 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md transition-all"
+                  >
+                    Remove
+                  </button>
+                </div>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   <p className="bg-black/50 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md">Preview</p>
                 </div>

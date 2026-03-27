@@ -1,46 +1,37 @@
-import React from 'react'
-import { FaMinus } from "react-icons/fa";
-import { FaPlus } from "react-icons/fa";
-import { CiTrash } from "react-icons/ci";
+import React from 'react';
 import { useDispatch } from 'react-redux';
-import { removeCartItem, updateQuantity } from '../redux/userSlice';
-import { getImageUrl } from '../api';
-function CartItemCard({data}) {
-    const dispatch=useDispatch()
-    const handleIncrease=(id,currentQty)=>{
-       dispatch(updateQuantity({id,quantity:currentQty+1}))
-    }
-      const handleDecrease=(id,currentQty)=>{
-        if(currentQty>1){
-  dispatch(updateQuantity({id,quantity:currentQty-1}))
-        }
-        
-    }
+import { FaLeaf, FaDrumstickBite } from 'react-icons/fa';
+import { addToCart, removeFromCart } from '../redux/userSlice';
+
+function CartItemCard({ item }) {
+  const dispatch = useDispatch();
+
+  const handleIncrease = () => {
+    dispatch(addToCart({ ...item, quantity: 1 }));
+  };
+
+  const handleDecrease = () => {
+    dispatch(removeFromCart(item));
+  };
+
   return (
-    <div className='flex items-center justify-between bg-white p-4 rounded-xl shadow border'>
-      <div className='flex items-center gap-4'>
-        <img src={getImageUrl(data.image)} alt="" className='w-20 h-20 object-cover rounded-lg border'/>
-        <div>
-            <h1 className='font-medium text-gray-800'>{data.name}</h1>
-            <p className='text-sm text-gray-500'>₹{data.price} x {data.quantity}</p>
-            <p className="font-bold text-gray-900">₹{data.price*data.quantity}</p>
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2 flex-1">
+        <div className={`w-3 h-3 border-2 ${item.foodType === 'veg' ? 'border-green-600' : 'border-red-600'} flex items-center justify-center rounded-[1px]`}>
+          <div className={`w-1 h-1 rounded-full ${item.foodType === 'veg' ? 'bg-green-600' : 'bg-red-600'}`}></div>
         </div>
+        <span className="text-[#3d4152] font-medium">{item.name}</span>
       </div>
-      <div className='flex items-center gap-3'>
-        <button className='p-2 cursor-pointer bg-gray-100 rounded-full hover:bg-gray-200' onClick={()=>handleDecrease(data.id,data.quantity)}>
-        <FaMinus size={12}/>
-        </button>
-        <span>{data.quantity}</span>
-        <button className='p-2 cursor-pointer bg-gray-100 rounded-full hover:bg-gray-200'  onClick={()=>handleIncrease(data.id,data.quantity)}>
-        <FaPlus size={12}/>
-        </button>
-        <button className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
- onClick={()=>dispatch(removeCartItem(data.id))}>
-<CiTrash size={18}/>
-        </button>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center border border-gray-200 px-2 py-1 text-[#60b246] font-bold">
+          <span className="w-4 text-center cursor-pointer hover:bg-gray-50" onClick={handleDecrease}>-</span>
+          <span className="w-6 text-center text-xs">{item.quantity}</span>
+          <span className="w-4 text-center cursor-pointer hover:bg-gray-50" onClick={handleIncrease}>+</span>
+        </div>
+        <span className="text-[#535665] w-12 text-right">₹{item.price * item.quantity}</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default CartItemCard
+export default CartItemCard;

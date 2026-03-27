@@ -42,6 +42,10 @@ function ForgotPassword() {
   };
 
   const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 4) {
+      setErr("Invalid or expired OTP");
+      return;
+    }
     setLoading(true);
     try {
       const result = await authAPI.verifyOtp(email, otp);
@@ -49,14 +53,14 @@ function ForgotPassword() {
       setErr("");
       setStep(3);
     } catch (error) {
-      setErr(error?.response?.data?.message || "Invalid OTP");
+      setErr("Invalid or expired OTP");
     }
     setLoading(false);
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      setErr("Please fill out all fields");
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setErr("Passwords cannot be empty");
       return;
     }
     if (newPassword.length < 6) {
@@ -145,11 +149,15 @@ function ForgotPassword() {
               </label>
               <input
                 type="text"
-                placeholder="Enter the OTP sent to your email"
-                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter 4-digit OTP"
+                maxLength="4"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  if (val.length <= 4) setOtp(val);
+                }}
                 value={otp}
                 required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] bg-white/80 placeholder-gray-400 transition-all hover:border-[#fc8019]/60"
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] bg-white/80 placeholder-gray-400 transition-all hover:border-[#fc8019]/60 text-center text-2xl font-bold tracking-[0.5em]"
               />
             </div>
             <button

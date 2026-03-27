@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
 import { orderAPI, userAPI, itemAPI, ratingAPI } from '../api'
 import { ClipLoader } from 'react-spinners'
-import { FaStar, FaClipboardList, FaTruck, FaRegSmile, FaCalendarAlt, FaListAlt, FaMoneyBillWave, FaTimes } from 'react-icons/fa'
+import { FaStar, FaClipboardList, FaTruck, FaRegSmile, FaCalendarAlt, FaListAlt, FaMoneyBillWave, FaTimes, FaMapMarkerAlt } from 'react-icons/fa'
 
 function DeliveryBoy() {
   const { userData, socket } = useSelector(state => state.user)
@@ -153,12 +153,9 @@ function DeliveryBoy() {
         try {
           const key = `${co.orderId}-${co.shopOrder._id}`
           const so = co.shopOrder
-          const subtotal = Number(so.subtotal || 0)
-          const ownerShare = subtotal
-          const deliveryBoyShare = Number(so.deliveryBoyShare || 0)
-          const superadminFee = Number(so.superadminFee || 0)
-          const paymentFee = Number(so.paymentFee || 0)
-          const amount = (ownerShare + deliveryBoyShare + superadminFee + paymentFee).toFixed(2)
+          
+          // Use totalAmount directly from backend calculation
+          const amount = Number(so.totalAmount || 0).toFixed(2)
 
           const shopId = typeof so.shop === 'string' ? so.shop : so.shop?._id
           if (!shopId) continue
@@ -432,20 +429,53 @@ function DeliveryBoy() {
                       <span className="font-semibold">Address:</span> {co.deliveryAddress?.text || 'Address not available'}
                     </p>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{co.shopOrder.shopOrderItems.length} items</span>
+                      <span className="bg-gray-100 px-2 py-0.5 rounded">{co.shopOrder.shopOrderItems.length} items</span>
+                      <span className="flex items-center gap-1">
+                        <FaMapMarkerAlt size={10} className="text-gray-400" />
+                        {co.shopOrder.shop?.city || 'City N/A'}
+                      </span>
                       <span>|</span>
-                      <span className="font-bold text-gray-700 text-sm">₹{co.shopOrder.subtotal}</span>
+                      <span className="font-extrabold text-[#ff4d2d] text-base">₹{co.shopOrder.subtotal}</span>
                     </div>
                   </div>
 
                   {/* Payment */}
-                  <div className="mt-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-500 font-medium">Payment Method:</span>
                       <span className="font-semibold uppercase text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
                         {co.paymentMethod === "online" ? "Online" : "Cash on Delivery"}
                       </span>
                     </div>
+
+                    {/* UPI Link for COD orders or pending payments */}
+                    {(co.paymentMethod === "cod" || !co.payment) && upiByKey[key] && (
+                      <div className="pt-2 border-t border-dashed border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Collect Payment (₹{upiByKey[key].amount})</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (upiByKey[key].link) {
+                                navigator.clipboard.writeText(upiByKey[key].link)
+                                setMessages(prev => ({ ...prev, [key]: 'UPI Link Copied!' }))
+                                setTimeout(() => setMessages(prev => ({ ...prev, [key]: '' })), 3000)
+                              }
+                            }}
+                            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border border-purple-200"
+                          >
+                            {messages[key] === 'UPI Link Copied!' ? '✓ Copied' : 'Copy UPI Link'}
+                          </button>
+                          {isMobile && (
+                            <a
+                              href={upiByKey[key].link}
+                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center"
+                            >
+                              Open UPI
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* OTP Section */}
@@ -474,7 +504,12 @@ function DeliveryBoy() {
                             className="flex-1 border-2 border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-center tracking-widest text-lg"
                             maxLength={4}
                             value={otpValues[key] || ''}
-                            onChange={(e) => setOtpValues(prev => ({ ...prev, [key]: e.target.value }))}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '')
+                              if (val.length <= 4) {
+                                setOtpValues(prev => ({ ...prev, [key]: val }))
+                              }
+                            }}
                           />
                           <button
                             className="bg-gray-200 text-gray-600 px-3 rounded-lg hover:bg-gray-300 transition-colors"
@@ -483,7 +518,7 @@ function DeliveryBoy() {
                             Cancel
                           </button>
                         </div>
-                        {messages[key] && <p className="text-center text-green-600 text-xs font-bold mb-3">{messages[key]}</p>}
+                        {messages[key] && messages[key] !== 'UPI Link Copied!' && <p className={`text-center text-xs font-bold mb-3 ${messages[key].includes('Verified') ? 'text-green-600' : 'text-blue-600'}`}>{messages[key]}</p>}
                         <button
                           className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold hover:bg-orange-600 shadow-md transition-all active:scale-95"
                           onClick={async () => {
@@ -506,7 +541,7 @@ function DeliveryBoy() {
                                 handleDeliveryCounts()
                               }, 1500)
                             } catch (err) {
-                              alert(err.response?.data?.message || 'OTP Verification Failed')
+                              alert(err.response?.data?.message || 'Invalid OTP')
                             } finally {
                               setLoading(false)
                             }

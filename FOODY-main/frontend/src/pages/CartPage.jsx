@@ -1,11 +1,11 @@
-import React from 'react'
-import { IoIosArrowRoundBack, IoIosSearch } from "react-icons/io";
+import React, { useEffect, useState } from 'react';
+import { IoIosArrowRoundBack } from "react-icons/io";
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import CartItemCard from '../components/CartItemCard';
 import { syncCartPrices, setUserData } from '../redux/userSlice';
 import { FiHelpCircle, FiUser } from 'react-icons/fi';
-import { authAPI } from '../api';
+import { authAPI, getImageUrl } from '../api';
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 function CartPage() {
@@ -13,6 +13,7 @@ function CartPage() {
     const dispatch = useDispatch()
     const { cartItems, totalAmount, itemsInMyCity, userData } = useSelector(state => state.user)
     
+    const [shopDetails, setShopDetails] = useState(null);
     const [authState, setAuthState] = React.useState('initial'); // 'initial', 'login', 'signup'
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
@@ -22,11 +23,20 @@ function CartPage() {
     const [error, setError] = React.useState('');
     const [showPassword, setShowPassword] = React.useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (itemsInMyCity && itemsInMyCity.length) {
             dispatch(syncCartPrices(itemsInMyCity))
         }
     }, [itemsInMyCity, dispatch])
+
+    useEffect(() => {
+        if (cartItems && cartItems.length > 0) {
+            const firstItem = itemsInMyCity.find(item => item._id === cartItems[0].id);
+            if (firstItem) {
+                setShopDetails(firstItem.shop);
+            }
+        }
+    }, [cartItems, itemsInMyCity]);
 
     const isLoggedIn = !!userData;
 
@@ -419,35 +429,20 @@ function CartPage() {
                 <div className="w-full md:w-[380px] bg-white p-6 shadow-sm border border-gray-100 h-fit">
                     <div className="flex items-start gap-4 mb-6">
                         <img 
-                            src={cartItems?.[0]?.shop?.image || "/src/assets/shop.png"} 
-                            alt="Shop" 
+                            src={getImageUrl(shopDetails?.image)} 
+                            alt={shopDetails?.name || "Shop"} 
                             className="w-12 h-12 object-cover rounded"
                         />
                         <div>
-                            <h3 className="font-bold text-[#282c3f] text-sm">{cartItems?.[0]?.shop?.name || "Restaurant"}</h3>
-                            <p className="text-xs text-[#7e808c]">{cartItems?.[0]?.shop?.address || "Location"}</p>
+                            <h3 className="font-bold text-[#282c3f] text-sm">{shopDetails?.name || "Restaurant"}</h3>
+                            <p className="text-xs text-[#7e808c]">{shopDetails?.address || "Location"}</p>
                             <div className="w-10 h-1 bg-[#282c3f] mt-2"></div>
                         </div>
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
                         {cartItems?.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2 flex-1">
-                                    <div className={`w-3 h-3 border-2 ${item.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center rounded-[1px]`}>
-                                        <div className={`w-1 h-1 rounded-full ${item.isVeg ? 'bg-green-600' : 'bg-red-600'}`}></div>
-                                    </div>
-                                    <span className="text-[#3d4152] font-medium">{item.name}</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center border border-gray-200 px-2 py-1 text-[#60b246] font-bold">
-                                        <span className="w-4 text-center cursor-pointer hover:bg-gray-50">-</span>
-                                        <span className="w-6 text-center text-xs">{item.quantity}</span>
-                                        <span className="w-4 text-center cursor-pointer hover:bg-gray-50">+</span>
-                                    </div>
-                                    <span className="text-[#535665] w-12 text-right">₹{item.price * item.quantity}</span>
-                                </div>
-                            </div>
+                            <CartItemCard key={index} item={item} />
                         ))}
                     </div>
 

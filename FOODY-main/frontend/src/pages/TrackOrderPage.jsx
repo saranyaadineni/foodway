@@ -25,14 +25,18 @@ function TrackOrderPage() {
     }, [handleGetOrder])
     return (
         <div className='max-w-4xl mx-auto p-4 flex flex-col gap-6'>
-            <div className='relative flex items-center gap-4 top-[20px] left-[20px] z-[10] mb-[10px]' onClick={() => navigate("/")}>
+            <div className='relative flex items-center gap-4 top-[20px] left-[20px] z-[10] mb-[10px] cursor-pointer' onClick={() => navigate("/my-orders")}>
                 <IoIosArrowRoundBack size={35} className='text-[#ff4d2d]' />
                 <h1 className='text-2xl font-bold md:text-center'>Track Order</h1>
             </div>
       {currentOrder?.shopOrders?.map((shopOrder,index)=>(
         <div className='bg-white p-4 rounded-2xl shadow-md border border-orange-100 space-y-4' key={index}>
          <div>
-            <p className='text-lg font-bold mb-2 text-[#ff4d2d]'>{shopOrder.shop.name}</p>
+            <p className='text-lg font-bold mb-1 text-[#ff4d2d]'>{shopOrder.shop.name}</p>
+            <p className='text-xs text-gray-500 mb-3 flex items-center gap-1'>
+                <IoLocationSharp size={14} />
+                {shopOrder.shop.address || 'Shop location not available'}
+            </p>
             <p className='font-semibold'><span>Items:</span> {shopOrder.shopOrderItems?.map(i=>i.name).join(",")}</p>
             <div className='mt-2 space-y-1 text-sm'>
                 <p><span className='font-semibold text-gray-700'>Items Total:</span> ₹{shopOrder.itemsTotal || shopOrder.subtotal}</p>

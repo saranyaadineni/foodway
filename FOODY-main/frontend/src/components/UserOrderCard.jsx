@@ -14,8 +14,10 @@ function UserOrderCard({ data }) {
     const [isCancelling, setIsCancelling] = useState(false)
     const [isEditingInstructions, setIsEditingInstructions] = useState(false)
     const [specialInstructions, setSpecialInstructions] = useState(data.specialInstructions || '')
+    const [specialInstructionsError, setSpecialInstructionsError] = useState("")
     const [otpMessage, setOtpMessage] = useState("")
     const [otpLoading, setOtpLoading] = useState(false)
+    const [showOtp, setShowOtp] = useState(false)
     const [comments, setComments] = useState({})
     
     const handleDownloadInvoice = (shopOrder) => {
@@ -201,25 +203,45 @@ function UserOrderCard({ data }) {
     }
 
     const handleUpdateSpecialInstructions = async () => {
+        setSpecialInstructionsError("");
+        
+        if (!specialInstructions || !specialInstructions.trim()) {
+            setSpecialInstructionsError("Please enter special instructions");
+            return;
+        }
+
+        if (specialInstructions.trim().length > 500) {
+            setSpecialInstructionsError("Instructions must be less than 500 characters");
+            return;
+        }
+
+        // Basic check for potentially harmful characters or just ensure it's readable text
+        // Allow alphabets, numbers, common punctuation: . , ! ? ( ) -
+        if (!/^[A-Za-z0-9\s.,!?( )\-]+$/.test(specialInstructions.trim())) {
+            setSpecialInstructionsError("Instructions contain unsupported special characters");
+            return;
+        }
+
         try {
-            await orderAPI.updateSpecialInstructions(data._id, specialInstructions)
+            const trimmedInstructions = specialInstructions.trim();
+            await orderAPI.updateSpecialInstructions(data._id, trimmedInstructions)
             
             // Update the order in local state
             const updatedOrders = myOrders.map(order => {
                 if (order._id === data._id) {
                     return {
                         ...order,
-                        specialInstructions: specialInstructions
+                        specialInstructions: trimmedInstructions
                     }
                 }
                 return order
             })
             dispatch(setMyOrders(updatedOrders))
             setIsEditingInstructions(false)
-            alert('Special instructions updated successfully')
+            setSpecialInstructions(trimmedInstructions)
         } catch (error) {
             console.error('Error updating special instructions:', error)
-            alert(error.response?.data?.message || 'Failed to update special instructions')
+            setSpecialInstructionsError(error.response?.data?.message || 'Failed to update special instructions')
         }
     }
 
@@ -233,6 +255,7 @@ function UserOrderCard({ data }) {
             } else {
                 setOtpMessage('New OTP generated and sent successfully.')
             }
+            setShowOtp(true)
         } catch (error) {
             setOtpMessage(error.response?.data?.message || 'Failed to generate OTP')
         } finally {
@@ -404,18 +427,39 @@ function UserOrderCard({ data }) {
                                         <div>
                                             <h4 className='text-lg font-bold text-orange-800 mb-1'>🔐 Delivery OTP</h4>
                                             <p className='text-sm text-orange-600 mb-2'>Share this OTP with your delivery person</p>
+                                            <p className='text-[10px] text-orange-500 font-bold uppercase'>OTP valid for 10 minutes</p>
                                         </div>
                                         <div className='text-right'>
-                                            <div className='bg-white px-4 py-2 rounded-lg border-2 border-orange-300 shadow-sm'>
-                                                <span className='text-2xl font-bold text-orange-800 tracking-wider'>{shopOrder.deliveryOtp}</span>
-                                            </div>
-                                            {shopOrder.otpExpires && (
+                                            {showOtp ? (
+                                                <>
+                                                    <div className='bg-white px-4 py-2 rounded-lg border-2 border-orange-300 shadow-sm'>
+                                                        <span className='text-2xl font-bold text-orange-800 tracking-wider'>{shopOrder.deliveryOtp}</span>
+                                                    </div>
+                                                    <button 
+                                                        className='text-xs text-orange-500 mt-2 font-semibold hover:underline'
+                                                        onClick={() => setShowOtp(false)}
+                                                    >
+                                                        Hide OTP
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button 
+                                                    className='bg-orange-500 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 transition-all active:scale-95 text-sm font-bold'
+                                                    onClick={() => setShowOtp(true)}
+                                                >
+                                                    View OTP
+                                                </button>
+                                            )}
+                                            {shopOrder.otpExpires && showOtp && (
                                                 <p className='text-[10px] text-orange-500 mt-1'>
                                                     Expires: {new Date(shopOrder.otpExpires).toLocaleString()}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
+                                    {otpMessage && (
+                                        <p className='text-xs text-orange-700 mt-2 font-medium'>{otpMessage}</p>
+                                    )}
                                 </div>
                             ) : (
                                 <div className='p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg shadow-sm'>
@@ -454,12 +498,18 @@ function UserOrderCard({ data }) {
                                 <div className='space-y-3'>
                                     <textarea
                                         value={specialInstructions}
-                                        onChange={(e) => setSpecialInstructions(e.target.value)}
+                                        onChange={(e) => {
+                                            setSpecialInstructions(e.target.value);
+                                            if (specialInstructionsError) setSpecialInstructionsError("");
+                                        }}
                                         placeholder="Add any special instructions for your order..."
-                                        className='w-full p-3 border border-blue-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                        className={`w-full p-3 border ${specialInstructionsError ? 'border-red-500' : 'border-blue-300'} rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                                         rows={3}
                                         maxLength={500}
                                     />
+                                    {specialInstructionsError && (
+                                        <p className='text-red-500 text-xs mt-1 font-semibold uppercase'>{specialInstructionsError}</p>
+                                    )}
                                     <div className='flex gap-2'>
                                         <button
                                             onClick={handleUpdateSpecialInstructions}

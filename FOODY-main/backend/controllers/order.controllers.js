@@ -611,7 +611,7 @@ export const updateOrderStatus = async (req, res) => {
             if (!shopOrder.deliveryOtp || !shopOrder.otpExpires || shopOrder.otpExpires <= now) {
                 const otp = Math.floor(1000 + Math.random() * 9000).toString()
                 shopOrder.deliveryOtp = otp
-                shopOrder.otpExpires = Date.now() + 24 * 60 * 60 * 1000 // 24 hours expiration
+                shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes expiration
                 shopOrder.lastOtpGeneratedAt = new Date()
                 console.log(`[STATUS_UPDATE] Generated OTP ${otp} for Order ${orderId}, ShopOrder ${shopOrder._id}`);
                 // Populate user to get email for sending OTP
@@ -878,11 +878,14 @@ export const getCurrentOrders = async (req, res) => {
             assignedTo: req.userId,
             status: "assigned"
         })
-            .populate("shop", "name")
+            .populate("shop", "name city")
             .populate("assignedTo", "fullName email mobile location")
             .populate({
                 path: "order",
-                populate: [{ path: "user", select: "fullName email location mobile" }]
+                populate: [
+                    { path: "user", select: "fullName email location mobile" },
+                    { path: "shopOrders.shop", select: "name city address" }
+                ]
             })
 
         if (!assignments || assignments.length === 0) {
@@ -910,6 +913,8 @@ export const getCurrentOrders = async (req, res) => {
                 orderId: assignment.order._id,
                 user: assignment.order.user,
                 shopOrder,
+                paymentMethod: assignment.order.paymentMethod,
+                payment: assignment.order.payment,
                 deliveryAddress: assignment.order.deliveryAddress,
                 deliveryBoyLocation,
                 customerLocation,
@@ -985,7 +990,7 @@ export const sendDeliveryOtp = async (req, res) => {
         // Generate new OTP only if no valid OTP exists
         const otp = Math.floor(1000 + Math.random() * 9000).toString()
         shopOrder.deliveryOtp = otp
-        shopOrder.otpExpires = Date.now() + 24 * 60 * 60 * 1000 // 24 hours expiration
+        shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes expiration
         shopOrder.lastOtpGeneratedAt = new Date()
         console.log(`[OTP_GENERATE] Generated new OTP ${otp} for Order ${orderId}, ShopOrder ${shopOrderId}`);
         
@@ -1334,6 +1339,18 @@ export const updateSpecialInstructions = async (req, res) => {
         const { orderId } = req.params
         const { specialInstructions } = req.body
         const userId = req.userId
+
+        if (!specialInstructions || !specialInstructions.trim()) {
+            return res.status(400).json({ message: "Please enter special instructions" })
+        }
+
+        if (specialInstructions.trim().length > 500) {
+            return res.status(400).json({ message: "Instructions must be less than 500 characters" })
+        }
+
+        if (!/^[A-Za-z0-9\s.,!?( )\-]+$/.test(specialInstructions.trim())) {
+            return res.status(400).json({ message: "Instructions contain unsupported special characters" })
+        }
         
         // Find the order
         const order = await Order.findById(orderId)
@@ -1398,7 +1415,7 @@ export const autoRegenerateOtps = async () => {
                     // Generate new OTP only for undelivered orders
                     const otp = Math.floor(1000 + Math.random() * 9000).toString()
                     shopOrder.deliveryOtp = otp
-                    shopOrder.otpExpires = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+                    shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
                     shopOrder.lastOtpGeneratedAt = new Date()
                     
                     // Send OTP email

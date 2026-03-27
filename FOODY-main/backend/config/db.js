@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import { MongoMemoryServer } from "mongodb-memory-server"
 import User from "../models/user.model.js"
 import Shop from "../models/shop.model.js"
 import Item from "../models/item.model.js"
@@ -7,16 +6,32 @@ import Item from "../models/item.model.js"
 let memoryServer = null
 
 const connectDb = async () => {
-    const mongoUri = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017/foodway"
+    const mongoUri = process.env.MONGODB_URL
+    if (!mongoUri) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error("MONGODB_URL is not defined in production environment.")
+        }
+        console.warn("MONGODB_URL is not defined. Falling back to local default for development.")
+    }
+
+    const uriToConnect = mongoUri || "mongodb://127.0.0.1:27017/foodway"
+    
     try {
-        await mongoose.connect(mongoUri, {
+        await mongoose.connect(uriToConnect, {
             serverSelectionTimeoutMS: 5000
         })
-        console.log(`db connected (${mongoUri})`)
+        console.log(`db connected (${uriToConnect})`)
     } catch (error) {
         console.error("db error:", error?.message || error)
+        
+        if (process.env.NODE_ENV === 'production') {
+            console.error("FATAL: Database connection failed in production. Exiting...")
+            process.exit(1)
+        }
+
         console.log("Starting in-memory MongoDB for development fallback...")
         try {
+            const { MongoMemoryServer } = await import("mongodb-memory-server")
             memoryServer = await MongoMemoryServer.create()
             const memUri = memoryServer.getUri()
             await mongoose.connect(memUri)

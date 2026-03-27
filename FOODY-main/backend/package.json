@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "build": "echo 'Backend build successful'",
     "clear-db": "node scripts/clearDatabase.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "author": "Virtual code",
   "license": "ISC",
@@ -20,7 +24,6 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb-memory-server": "^10.1.4",
     "mongoose": "^8.17.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
@@ -28,5 +31,8 @@
     "nodemon": "^3.1.10",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.4"
   }
 }

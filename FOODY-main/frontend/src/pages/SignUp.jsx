@@ -28,9 +28,9 @@ function SignUp() {
     
     if (name === "fullName") {
       if (!value || !value.trim()) {
-        errors.fullName = "Full name is required";
+        errors.fullName = "Please enter your full name";
       } else if (!/^[A-Za-z\s]+$/.test(value)) {
-        errors.fullName = "Enter a valid full name (alphabets and spaces only)";
+        errors.fullName = "Full name should only contain alphabets and spaces";
       } else if (value.trim().length < 3 || value.trim().length > 50) {
         errors.fullName = "Full name must be between 3 and 50 characters";
       } else {
@@ -39,11 +39,11 @@ function SignUp() {
     }
 
     if (name === "email") {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!value || !value.trim()) {
-        errors.email = "Email is required";
+        errors.email = "Please enter your email address";
       } else if (!emailRegex.test(value)) {
-        errors.email = "Enter a valid email address";
+        errors.email = "Please enter a valid email address (e.g., name@domain.com)";
       } else if (value.length > 100) {
         errors.email = "Email is too long";
       } else {
@@ -96,15 +96,54 @@ function SignUp() {
     fetchUserTypes();
   }, []);
 
-  const handleSignUp = async () => {
-    // Validate all fields
-    const isNameValid = validateField("fullName", fullName);
-    const isEmailValid = validateField("email", email);
-    const isMobileValid = validateField("mobile", mobile);
-    const isPasswordValid = validateField("password", password);
-    const isUserTypeValid = role === "user" ? validateField("userType", userType) : true;
+  const validateAll = () => {
+    let errors = {};
+    
+    // Full Name
+    if (!fullName || !fullName.trim()) {
+      errors.fullName = "Please enter your full name";
+    } else if (!/^[A-Za-z\s]+$/.test(fullName)) {
+      errors.fullName = "Full name should only contain alphabets and spaces";
+    } else if (fullName.trim().length < 3 || fullName.trim().length > 50) {
+      errors.fullName = "Full name must be between 3 and 50 characters";
+    }
 
-    if (!isNameValid || !isEmailValid || !isMobileValid || !isPasswordValid || !isUserTypeValid) {
+    // Email
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !email.trim()) {
+      errors.email = "Please enter your email address";
+    } else if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email address (e.g., name@domain.com)";
+    } else if (email.length > 100) {
+      errors.email = "Email is too long";
+    }
+
+    // Mobile
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobile || !mobile.trim()) {
+      errors.mobile = "Mobile number is required";
+    } else if (!mobileRegex.test(mobile)) {
+      errors.mobile = "Enter a valid 10-digit mobile number";
+    }
+
+    // Password
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    // User Type
+    if (role === "user" && (!userType || userType === "")) {
+      errors.userType = "Please select user type";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateAll()) {
       setErr("Please fix the validation errors before signing up");
       return;
     }

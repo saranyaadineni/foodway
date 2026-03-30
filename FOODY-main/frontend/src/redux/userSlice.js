@@ -155,10 +155,19 @@ const userSlice = createSlice({
       localStorage.setItem("totalAmount", state.totalAmount);
     },
 
-    removeCartItem: (state, action) => {
-      state.cartItems = state.cartItems.filter(
-        (i) => i.id !== action.payload
-      );
+    removeFromCart: (state, action) => {
+      const item = action.payload;
+      const existing = state.cartItems.find((i) => i.id === item.id);
+
+      if (existing) {
+        if (existing.quantity > 1) {
+          existing.quantity -= 1;
+        } else {
+          state.cartItems = state.cartItems.filter(
+            (i) => i.id !== item.id
+          );
+        }
+      }
 
       state.totalAmount = state.cartItems.reduce(
         (sum, i) => sum + i.price * i.quantity,
@@ -310,7 +319,7 @@ export const {
   setSocket,
   addToCart,
   updateQuantity,
-  removeCartItem,
+  removeFromCart,
   clearCart,
   clearCartNotification,
   syncCartPrices,

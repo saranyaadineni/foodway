@@ -1,26 +1,30 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { io } from "socket.io-client";
-import SignUp from "./pages/SignUp";
-import SignIn from "./pages/SignIn";
-import ForgotPassword from "./pages/ForgotPassword";
-import Home from "./pages/Home";
-import CreateEditShop from "./pages/CreateEditShop";
-import AddItem from "./pages/AddItem";
-import Search from "./pages/Search";
-import EditItem from "./pages/EditItem";
-import Offers from "./pages/Offers";
-import CartPage from "./pages/CartPage";
-import CheckOut from "./pages/CheckOut";
-import OrderPlaced from "./pages/OrderPlaced";
-import MyOrders from "./pages/MyOrders";
-import TrackOrderPage from "./pages/TrackOrderPage";
-import Shop from "./pages/Shop";
-import CategoryResults from "./pages/CategoryResults";
-import Help from "./pages/Help";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
+import { ClipLoader } from "react-spinners";
+
+// 🚀 Lazy Loading Components
+const SignUp = lazy(() => import("./pages/SignUp"));
+const SignIn = lazy(() => import("./pages/SignIn"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Home = lazy(() => import("./pages/Home"));
+const CreateEditShop = lazy(() => import("./pages/CreateEditShop"));
+const AddItem = lazy(() => import("./pages/AddItem"));
+const Search = lazy(() => import("./pages/Search"));
+const EditItem = lazy(() => import("./pages/EditItem"));
+const Offers = lazy(() => import("./pages/Offers"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const CheckOut = lazy(() => import("./pages/CheckOut"));
+const OrderPlaced = lazy(() => import("./pages/OrderPlaced"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const TrackOrderPage = lazy(() => import("./pages/TrackOrderPage"));
+const Shop = lazy(() => import("./pages/Shop"));
+const CategoryResults = lazy(() => import("./pages/CategoryResults"));
+const Help = lazy(() => import("./pages/Help"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+
 import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import CartNotification from "./components/CartNotification";
 import Footer from "./components/Footer";
@@ -32,32 +36,26 @@ import useGetShopByCity from "./hooks/useGetShopByCity";
 import useGetItemsByCity from "./hooks/useGetItemsByCity";
 import useGetMyOrders from "./hooks/useGetMyOrders";
 
-
-
 import { setSocket } from "./redux/userSlice";
 import { serverUrl } from "./api";
 
-
-import { ClipLoader } from "react-spinners";
+// 🌀 Loading Spinner for Suspense
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff2eb] via-[#ffe7db] to-[#ffd9c9]">
+    <ClipLoader color="#fc8019" size={50} />
+  </div>
+);
 
 // 🔐 Protected Route Wrapper
 const ProtectedRoute = ({ user, loading, children }) => {
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff2eb] via-[#ffe7db] to-[#ffd9c9]">
-      <ClipLoader color="#fc8019" size={50} />
-    </div>
-  );
+  if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/signin" replace />;
   return children;
 };
 
 // 👑 Super Admin Route
 const SuperAdminRoute = ({ user, loading, children }) => {
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff2eb] via-[#ffe7db] to-[#ffd9c9]">
-      <ClipLoader color="#fc8019" size={50} />
-    </div>
-  );
+  if (loading) return <PageLoader />;
   if (user?.role !== "superadmin") return <Navigate to="/signin" replace />;
   return children;
 };
@@ -130,77 +128,79 @@ function App() {
     <>
       <CartNotification />
 
-      <Routes>
-        {/* 🔓 Public Routes */}
-        <Route path="/signup" element={authLoading ? null : (!userData ? <SignUp /> : <Navigate to="/" />)} />
-        <Route path="/signin" element={authLoading ? null : (!userData ? <SignIn /> : <Navigate to="/" />)} />
-        <Route path="/forgot-password" element={authLoading ? null : (!userData ? <ForgotPassword /> : <Navigate to="/" />)} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/offers" element={<Offers />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* 🔓 Public Routes */}
+          <Route path="/signup" element={authLoading ? null : (!userData ? <SignUp /> : <Navigate to="/" />)} />
+          <Route path="/signin" element={authLoading ? null : (!userData ? <SignIn /> : <Navigate to="/" />)} />
+          <Route path="/forgot-password" element={authLoading ? null : (!userData ? <ForgotPassword /> : <Navigate to="/" />)} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/offers" element={<Offers />} />
 
-        {/* 🔐 Protected Routes */}
-        <Route path="/" element={<Home />} />
+          {/* 🔐 Protected Routes */}
+          <Route path="/" element={<Home />} />
 
-        <Route path="/create-edit-shop" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <CreateEditShop />
-          </ProtectedRoute>
-        } />
+          <Route path="/create-edit-shop" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <CreateEditShop />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/add-item" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <AddItem />
-          </ProtectedRoute>
-        } />
+          <Route path="/add-item" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <AddItem />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/edit-item/:itemId" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <EditItem />
-          </ProtectedRoute>
-        } />
+          <Route path="/edit-item/:itemId" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <EditItem />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/cart" element={<CartPage />} />
+          <Route path="/cart" element={<CartPage />} />
 
-        <Route path="/checkout" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <CheckOut />
-          </ProtectedRoute>
-        } />
+          <Route path="/checkout" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <CheckOut />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/order-placed" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <OrderPlaced />
-          </ProtectedRoute>
-        } />
+          <Route path="/order-placed" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <OrderPlaced />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/my-orders" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <MyOrders />
-          </ProtectedRoute>
-        } />
+          <Route path="/my-orders" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <MyOrders />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/track-order/:orderId" element={
-          <ProtectedRoute user={userData} loading={authLoading}>
-            <TrackOrderPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/track-order/:orderId" element={
+            <ProtectedRoute user={userData} loading={authLoading}>
+              <TrackOrderPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/shop/:shopId" element={<Shop />} />
-        <Route path="/collection/:categoryName" element={<CategoryResults />} />
+          <Route path="/shop/:shopId" element={<Shop />} />
+          <Route path="/collection/:categoryName" element={<CategoryResults />} />
 
-        {/* 👑 Super Admin */}
-        <Route path="/superadmin" element={
-          <SuperAdminRoute user={userData} loading={authLoading}>
-            <SuperAdminDashboard />
-          </SuperAdminRoute>
-        } />
+          {/* 👑 Super Admin */}
+          <Route path="/superadmin" element={
+            <SuperAdminRoute user={userData} loading={authLoading}>
+              <SuperAdminDashboard />
+            </SuperAdminRoute>
+          } />
 
-        {/* ✅ Fallback: any unknown route goes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* ✅ Fallback: any unknown route goes to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
 
       {showFooter && <Footer />}
     </>

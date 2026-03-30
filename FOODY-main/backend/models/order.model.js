@@ -168,6 +168,13 @@ const orderSchema = new mongoose.Schema({
    userDeleted: { type: Boolean, default: false }
 }, { timestamps: true })
 
+// 🚀 Performance Indexes
+orderSchema.index({ user: 1 });
+orderSchema.index({ "shopOrders.shop": 1 });
+orderSchema.index({ "shopOrders.owner": 1 });
+orderSchema.index({ "shopOrders.status": 1 });
+orderSchema.index({ createdAt: -1 }); // For sorting by date
+
 // Pre-save middleware to generate sequential order ID
 orderSchema.pre('save', async function(next) {
     if (this.isNew && !this.orderId) {

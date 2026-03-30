@@ -7,6 +7,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import cron from "node-cron";
 import { Server } from "socket.io";
+import helmet from "helmet";
+import compression from "compression";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
 
 import connectDb from "./config/db.js";
 import authRouter from "./routes/auth.routes.js";
@@ -22,6 +26,33 @@ import { autoRegenerateOtps } from "./controllers/order.controllers.js";
 
 const app = express();
 app.set('trust proxy', 1); // Trust Cloudflare proxy
+
+// 🛡️ Security Headers
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false, // Disable CSP if you have issues with S3 or external images
+}));
+
+// ⚡ Compression
+app.use(compression());
+
+// 📝 Logging
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+} else {
+  app.use(morgan("combined"));
+}
+
+// 🚦 Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again after 15 minutes",
+});
+app.use("/api/", limiter);
+
 const server = http.createServer(app);
 const port = process.env.PORT || 3011;
 

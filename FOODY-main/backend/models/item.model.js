@@ -80,5 +80,12 @@ const itemSchema = new mongoose.Schema({
    }
 }, { timestamps: true })
 
+// 🚀 Performance Indexes
+itemSchema.index({ shop: 1 });
+itemSchema.index({ category: 1 });
+itemSchema.index({ city: 1 });
+itemSchema.index({ city: 1, category: 1 });
+itemSchema.index({ name: "text" }); // For search functionality
+
 const Item=mongoose.model("Item",itemSchema)
 export default Item

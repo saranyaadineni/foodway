@@ -100,9 +100,6 @@ export const authAPI = {
       newPassword,
     }),
 
-  googleAuth: (data) =>
-    api.post("/api/auth/google-auth", data),
-
   getUserTypes: () =>
     api.get("/api/auth/user-types"),
 };

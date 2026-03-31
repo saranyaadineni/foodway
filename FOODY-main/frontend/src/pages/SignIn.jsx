@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { FaRegEye, FaRegEyeSlash, FaGoogle } from "react-icons/fa";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../api";
 import { ClipLoader } from "react-spinners";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
-import { auth } from "../../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 function SignIn() {
   const navigate = useNavigate();
@@ -18,7 +16,6 @@ function SignIn() {
   const [err, setErr] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   const validateFields = () => {
     let errors = {};
@@ -58,36 +55,6 @@ function SignIn() {
       setErr(error?.response?.data?.message || "Sign-in request error");
     }
     setLoading(false);
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setErr("");
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Call your backend to handle Google authentication
-      const backendResult = await authAPI.googleAuth({
-        fullName: user.displayName,
-        email: user.email,
-        role: "user", // Default role
-        mobile: user.phoneNumber || "",
-        userType: "" // Default userType
-      });
-
-      if (backendResult.data?.token) {
-        localStorage.setItem('token', backendResult.data.token);
-      }
-      dispatch(setUserData(backendResult.data));
-      navigate("/");
-    } catch (error) {
-      console.error("Google sign-in error:", error);
-      setErr(error?.response?.data?.message || "Google sign-in failed. Please try again.");
-    } finally {
-      setGoogleLoading(false);
-    }
   };
 
   return (
@@ -174,36 +141,10 @@ function SignIn() {
         {/* Sign In Button */}
         <button
           onClick={handleSignIn}
-          disabled={loading || googleLoading}
+          disabled={loading}
           className="w-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:shadow-lg hover:scale-[1.03] transition-all duration-200 disabled:opacity-60"
         >
           {loading ? <ClipLoader size={22} color="white" /> : "Sign In"}
-        </button>
-
-        {/* Continue with Google */}
-        <div className="relative flex items-center justify-center my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <span className="relative bg-white px-4 text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            or
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={loading || googleLoading}
-          className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold text-lg shadow-sm hover:shadow-md hover:bg-gray-50 flex items-center justify-center gap-3 transition-all duration-200 disabled:opacity-60"
-        >
-          {googleLoading ? (
-            <ClipLoader size={22} color="#fc8019" />
-          ) : (
-            <>
-              <FaGoogle className="text-[#ea4335]" />
-              <span>Continue with Google</span>
-            </>
-          )}
         </button>
 
         {/* Error */}

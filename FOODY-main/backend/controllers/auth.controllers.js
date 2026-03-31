@@ -122,10 +122,6 @@ export const signIn=async (req,res) => {
         if(!user){
             return res.status(400).json({message:"Invalid email or password"})
         }
-        // If the account was created via Google auth, there may be no password
-        if(!user.password){
-            return res.status(400).json({message:"This account uses Google Sign-In. Please sign in with Google or set a password using Forgot Password."})
-        }
         
         // Require approval for owners and delivery boys before login
         if((user.role === "deliveryBoy" || user.role === "owner") && !user.isApproved){
@@ -234,67 +230,5 @@ export const resetPassword=async (req,res) => {
      return res.status(200).json({message:"password reset successfully"})
     } catch (error) {
          return res.status(500).json(`reset password error ${error}`)
-    }
-}
-
-export const googleAuth=async (req,res) => {
-    try {
-        const {fullName,email,role,mobile,userType}=req.body
-        let user=await User.findOne({email})
-        if(user){
-            const token=await genToken(user)
-            const isProd = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https'
-            const cookieOptions = {
-                httpOnly: true,
-                maxAge: 7*24*60*60*1000,
-                secure: !!isProd,
-                sameSite: isProd ? 'none' : 'lax'
-            }
-            res.cookie("token",token,cookieOptions)
-            return res.status(200).json({ ...user.toObject(), token })
-        }
-        
-        // Create user data object
-        const userData = {
-            fullName,
-            email,
-            role,
-            mobile
-        };
-        
-        // Add userType only for users
-        if(role === "user" && userType) {
-            userData.userType = userType;
-            
-            // Set delivery permission based on user type
-            const userTypeDoc = await UserType.findOne({ name: userType });
-            if(userTypeDoc) {
-                userData.deliveryAllowed = userTypeDoc.deliveryAllowed;
-            }
-        }
-        
-        user=await User.create(userData)
-
-        // For owners and delivery boys, do NOT authenticate on signup
-        if (user.role === "owner" || user.role === "deliveryBoy") {
-            return res.status(201).json({
-                message: "Account created. Pending superadmin approval.",
-                pendingApproval: true
-            })
-        }
-
-        const token=await genToken(user)
-        const isProd = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https'
-        const cookieOptions = {
-            httpOnly: true,
-            maxAge: 7*24*60*60*1000,
-            secure: !!isProd,
-            sameSite: isProd ? 'none' : 'lax'
-        }
-        res.cookie("token",token,cookieOptions)
-        return res.status(201).json({ ...user.toObject(), token })
-
-    } catch (error) {
-        return res.status(500).json(`google auth error ${error}`)
     }
 }

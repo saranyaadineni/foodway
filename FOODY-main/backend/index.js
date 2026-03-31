@@ -146,15 +146,22 @@ cron.schedule("0 */2 * * *", () => {
 });
 
 
-server.listen(port, async () => {
+const startServer = async () => {
   try {
-    await connectDb();
-    console.log(`🚀 Server running on port ${port}`);
-    console.log(`📡 Allowed Origins: ${allowedOrigins.join(", ")}`);
+    await connectDb(); // ✅ connect DB first
+
+    server.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
+      console.log(`📡 Allowed Origins: ${allowedOrigins.join(", ")}`);
+    });
+
   } catch (error) {
     console.error("❌ Startup error:", error);
+    process.exit(1);
   }
-});
+};
+
+startServer();
 
 // Cloudflare / Proxy resilience
 server.keepAliveTimeout = 65000; 

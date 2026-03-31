@@ -1,4 +1,4 @@
-import DeliveryAssignment from "../models/deliveryassignment.model.js"
+import DeliveryAssignment from "../models/deliveryAssignment.model.js"
 import Order from "../models/order.model.js"
 import Shop from "../models/shop.model.js"
 import User from "../models/user.model.js"

@@ -7,7 +7,7 @@ import { FaCreditCard } from "react-icons/fa";
 import { FaMobileScreenButton } from "react-icons/fa6";
 import { useNavigate } from 'react-router-dom';
 import { addMyOrder, clearCart, syncCartPrices } from '../redux/userSlice';
-import { itemAPI, orderAPI } from '../api';
+import { authAPI, itemAPI, orderAPI } from '../api';
 
 function CheckOut() {
   const { cartItems ,totalAmount, itemsInMyCity, userData } = useSelector(state => state.user)
@@ -93,8 +93,8 @@ function CheckOut() {
     if (orderType === "delivery" && !addressInput.trim()) {
       errors.address = "Please enter a delivery address";
     }
-    if (!phoneNumber.trim() || !/^\d{10}$/.test(phoneNumber)) {
-      errors.phone = "Please enter a valid 10-digit mobile number";
+    if (!phoneNumber.trim() || !/^[6-9]\d{9}$/.test(phoneNumber)) {
+      errors.phone = "Phone number must be 10 digits and start with 6, 7, 8, or 9";
     }
 
     setFieldErrors(errors);
@@ -116,12 +116,16 @@ function CheckOut() {
   const handleResendOtp = async () => {
     if (otpTimer > 0) return;
     try {
-      await authAPI.sendOtp(userData.email);
+      const email = userData?.email;
+      if (!email) {
+        throw new Error("User email not found. Please log in again.");
+      }
+      await authAPI.sendOtp(email);
       setOtpResent(true);
       setOtpTimer(60); // 60 seconds cooldown
       setTimeout(() => setOtpResent(false), 3000);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to resend OTP");
+      alert(error.response?.data?.message || error.message || "Failed to resend OTP");
     }
   };
 
@@ -144,9 +148,32 @@ function CheckOut() {
     }
   };
 
+  useEffect(() => {
+    if (showAddressForm) {
+      window.history.pushState({ modal: true }, "");
+    }
+    const handlePopState = (e) => {
+      if (showAddressForm) {
+        setShowAddressForm(false);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [showAddressForm]);
+
   const handleSaveAddress = (newAddress) => {
     setAddressInput(newAddress);
     setShowAddressForm(false);
+    if (window.history.state?.modal) {
+      window.history.back();
+    }
+  };
+
+  const handleCancelAddress = () => {
+    setShowAddressForm(false);
+    if (window.history.state?.modal) {
+      window.history.back();
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -158,12 +185,18 @@ function CheckOut() {
 
     setLoading(true);
     try {
-      // Trigger OTP first
-      await authAPI.sendOtp(userData.email);
+      // Trigger OTP first - ensure we have the user's email
+      const email = userData?.email;
+      if (!email) {
+        throw new Error("User email not found. Please log in again.");
+      }
+      
+      await authAPI.sendOtp(email);
       setShowOtpModal(true);
       setOtpTimer(60);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to send OTP. Please try again.");
+      console.error("OTP Send Error:", error);
+      alert(error.response?.data?.message || error.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -486,7 +519,7 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
               ></textarea>
               <div className="flex justify-end gap-4 mt-4">
                 <button
-                  onClick={() => setShowAddressForm(false)}
+                  onClick={handleCancelAddress}
                   className="text-sm text-gray-600 hover:underline"
                 >
                   Cancel

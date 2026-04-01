@@ -199,14 +199,14 @@ function CartPage() {
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => setAuthState('login')}
-                                            className="flex-1 border-2 border-[#60b246] text-[#60b246] font-bold py-3 px-6 hover:shadow-md transition-all text-sm uppercase"
+                                            className="flex-1 border-2 border-[#fc8019] text-[#fc8019] font-bold py-3 px-6 hover:shadow-md transition-all text-sm uppercase"
                                         >
                                             <div className="text-xs font-normal mb-1">Have an account?</div>
                                             LOG IN
                                         </button>
                                         <button
                                             onClick={() => setAuthState('signup')}
-                                            className="flex-1 bg-[#60b246] text-white font-bold py-3 px-6 hover:shadow-md transition-all text-sm uppercase border-2 border-[#60b246]"
+                                            className="flex-1 bg-[#fc8019] text-white font-bold py-3 px-6 hover:shadow-md transition-all text-sm uppercase border-2 border-[#fc8019]"
                                         >
                                             <div className="text-xs font-normal mb-1">New to FoodWay?</div>
                                             SIGN UP
@@ -255,7 +255,7 @@ function CartPage() {
                                         <button 
                                             type="submit" 
                                             disabled={loading}
-                                            className="w-full bg-[#60b246] text-white font-bold py-3 mt-6 text-sm hover:shadow-lg transition-all"
+                                            className="w-full bg-[#fc8019] text-white font-bold py-3 mt-6 text-sm hover:shadow-lg transition-all"
                                         >
                                             {loading ? "LOGGING IN..." : "LOGIN"}
                                         </button>
@@ -333,7 +333,7 @@ function CartPage() {
                                         <button 
                                             type="submit" 
                                             disabled={loading}
-                                            className="w-full bg-[#60b246] text-white font-bold py-3 mt-6 text-sm hover:shadow-lg transition-all"
+                                            className="w-full bg-[#fc8019] text-white font-bold py-3 mt-6 text-sm hover:shadow-lg transition-all"
                                         >
                                             {loading ? "CONTINUING..." : "CONTINUE"}
                                         </button>
@@ -354,7 +354,7 @@ function CartPage() {
                         <div className="space-y-4">
                             <div className="bg-white p-8 shadow-sm border border-gray-100 flex items-center justify-between transition-all duration-300">
                                 <div className="flex items-center gap-4">
-                                    <div className="bg-[#60b246] p-2 rounded-full text-white">
+                                    <div className="bg-[#fc8019] p-2 rounded-full text-white">
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                         </svg>
@@ -401,7 +401,7 @@ function CartPage() {
                                             </div>
                                             <button 
                                                 onClick={() => navigate("/checkout")}
-                                                className="w-full border-2 border-[#60b246] text-[#60b246] font-bold py-2 px-4 text-xs hover:bg-[#60b246] hover:text-white transition-all uppercase tracking-wide"
+                                                className="w-full border-2 border-[#fc8019] text-[#fc8019] font-bold py-2 px-4 text-xs hover:bg-[#fc8019] hover:text-white transition-all uppercase tracking-wide"
                                             >
                                                 Add New
                                             </button>
@@ -454,7 +454,7 @@ function CartPage() {
                         {isLoggedIn ? (
                             <button
                                 onClick={() => navigate("/checkout")}
-                                className="w-full bg-[#60b246] text-white font-bold py-3 text-sm hover:shadow-lg transition-all"
+                                className="w-full bg-[#fc8019] text-white font-bold py-3 text-sm hover:shadow-lg transition-all"
                             >
                                 PROCEED TO CHECKOUT
                             </button>

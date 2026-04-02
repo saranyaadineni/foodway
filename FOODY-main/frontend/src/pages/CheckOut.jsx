@@ -21,31 +21,8 @@ function CheckOut() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpInput, setOtpInput] = useState("");
-  const [otpTimer, setOtpTimer] = useState(0);
-  const [otpResent, setOtpResent] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const navigate=useNavigate()
   const dispatch = useDispatch()
-
-  // OTP Timer Logic
-  useEffect(() => {
-    let interval;
-    if (otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [otpTimer]);
-
-  // Redirect to home if cart is empty (e.g., after successful order or manual clear)
-  useEffect(() => {
-    if (!cartItems || cartItems.length === 0) {
-      navigate('/')
-    }
-  }, [cartItems, navigate])
 
   useEffect(() => {
     if (itemsInMyCity && itemsInMyCity.length) {
@@ -113,41 +90,6 @@ function CheckOut() {
     }
   };
 
-  const handleResendOtp = async () => {
-    if (otpTimer > 0) return;
-    try {
-      const email = userData?.email;
-      if (!email) {
-        throw new Error("User email not found. Please log in again.");
-      }
-      await authAPI.sendOtp(email);
-      setOtpResent(true);
-      setOtpTimer(60); // 60 seconds cooldown
-      setTimeout(() => setOtpResent(false), 3000);
-    } catch (error) {
-      alert(error.response?.data?.message || error.message || "Failed to resend OTP");
-    }
-  };
-
-  const handleVerifyAndPlaceOrder = async () => {
-    if (!otpInput || otpInput.length !== 4) {
-      alert("Please enter a valid 4-digit OTP");
-      return;
-    }
-
-    setVerifyingOtp(true);
-    try {
-      await authAPI.verifyOtp(userData.email, otpInput);
-      setShowOtpModal(false);
-      // Proceed with actual order placement
-      await proceedWithOrderPlacement();
-    } catch (error) {
-      alert(error.response?.data?.message || "Invalid OTP, please try again");
-    } finally {
-      setVerifyingOtp(false);
-    }
-  };
-
   useEffect(() => {
     if (showAddressForm) {
       window.history.pushState({ modal: true }, "");
@@ -183,23 +125,7 @@ function CheckOut() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Trigger OTP first - ensure we have the user's email
-      const email = userData?.email;
-      if (!email) {
-        throw new Error("User email not found. Please log in again.");
-      }
-      
-      await authAPI.sendOtp(email);
-      setShowOtpModal(true);
-      setOtpTimer(60);
-    } catch (error) {
-      console.error("OTP Send Error:", error);
-      alert(error.response?.data?.message || error.message || "Failed to send OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    await proceedWithOrderPlacement();
   };
 
   const proceedWithOrderPlacement = async () => {
@@ -529,69 +455,6 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
                   className="bg-[#ff4d2d] text-white px-4 py-2 rounded-lg text-sm font-semibold"
                 >
                   Save Address
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* OTP Verification Modal */}
-        {showOtpModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[9999]">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-              <div className="mb-6">
-                <div className="w-16 h-16 bg-orange-100 text-[#ff4d2d] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaMobileScreenButton size={30} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">OTP Verification</h2>
-                <p className="text-gray-500 text-sm mt-2">
-                  We've sent a 4-digit verification code to your registered mobile number
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <input
-                  type="text"
-                  maxLength="4"
-                  value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter 4-digit OTP"
-                  className="w-full text-center text-2xl font-bold tracking-[0.5em] border-b-2 border-gray-300 focus:border-[#ff4d2d] focus:outline-none py-2 transition-colors"
-                />
-              </div>
-
-              <div className="mb-8">
-                {otpResent ? (
-                  <p className="text-green-600 text-sm font-semibold flex items-center justify-center gap-1">
-                    ✓ OTP resent successfully
-                  </p>
-                ) : otpTimer > 0 ? (
-                  <p className="text-gray-400 text-xs">
-                    Resend OTP in <span className="font-bold">{otpTimer}s</span>
-                  </p>
-                ) : (
-                  <button
-                    onClick={handleResendOtp}
-                    className="text-[#ff4d2d] text-sm font-bold hover:underline"
-                  >
-                    Resend OTP
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleVerifyAndPlaceOrder}
-                  disabled={otpInput.length !== 4 || verifyingOtp}
-                  className="w-full bg-[#ff4d2d] hover:bg-[#e64526] text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-100 disabled:bg-gray-300 disabled:shadow-none transition-all"
-                >
-                  {verifyingOtp ? "Verifying..." : "Verify & Complete Order"}
-                </button>
-                <button
-                  onClick={() => setShowOtpModal(false)}
-                  className="text-gray-400 text-sm font-semibold hover:text-gray-600 transition-colors"
-                >
-                  Cancel
                 </button>
               </div>
             </div>

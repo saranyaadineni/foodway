@@ -1,82 +1,121 @@
-import React, { useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { orderAPI } from '../api'
-import { useEffect } from 'react'
-import { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { orderAPI } from '../api';
 import { IoIosArrowRoundBack } from "react-icons/io";
-// react-redux not used on this page
+import { IoLocationSharp } from "react-icons/io5";
+import { ClipLoader } from 'react-spinners';
+
 function TrackOrderPage() {
-    const { orderId } = useParams()
-    const [currentOrder, setCurrentOrder] = useState() 
-    const navigate = useNavigate()
-    // Socket is not used on this page; avoid unused variable
-    
+    const { orderId } = useParams();
+    const [currentOrder, setCurrentOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
     const handleGetOrder = useCallback(async () => {
+        setLoading(true);
+        setError(null);
         try {
-            const result = await orderAPI.getOrderById(orderId)
-            setCurrentOrder(result.data)
-        } catch (error) {
-            console.log(error)
+            const result = await orderAPI.getOrderById(orderId);
+            setCurrentOrder(result.data);
+        } catch (err) {
+            console.error("Failed to fetch order:", err);
+            setError("Could not load order details. Please try again later.");
+        } finally {
+            setLoading(false);
         }
-    }, [orderId])
+    }, [orderId]);
 
     useEffect(() => {
-        handleGetOrder()
-    }, [handleGetOrder])
+        handleGetOrder();
+    }, [handleGetOrder]);
+
+    if (loading) {
+        return (
+            <div className='min-h-screen flex items-center justify-center'>
+                <ClipLoader color="#ff4d2d" size={50} />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className='min-h-screen flex flex-col items-center justify-center text-center px-4'>
+                <h2 className='text-xl font-bold text-red-500 mb-2'>Error</h2>
+                <p className='text-gray-600'>{error}</p>
+                <button 
+                    onClick={() => navigate("/my-orders")}
+                    className='mt-4 bg-[#ff4d2d] text-white px-4 py-2 rounded-lg'
+                >
+                    Back to My Orders
+                </button>
+            </div>
+        );
+    }
+
+    if (!currentOrder) {
+        return (
+            <div className='min-h-screen flex flex-col items-center justify-center text-center px-4'>
+                <h2 className='text-xl font-bold text-gray-800 mb-2'>Order Not Found</h2>
+                <p className='text-gray-600'>The requested order could not be found.</p>
+                <button 
+                    onClick={() => navigate("/my-orders")}
+                    className='mt-4 bg-[#ff4d2d] text-white px-4 py-2 rounded-lg'
+                >
+                    Back to My Orders
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className='max-w-4xl mx-auto p-4 flex flex-col gap-6'>
             <div className='relative flex items-center gap-4 top-[20px] left-[20px] z-[10] mb-[10px] cursor-pointer' onClick={() => navigate("/my-orders")}>
                 <IoIosArrowRoundBack size={35} className='text-[#ff4d2d]' />
                 <h1 className='text-2xl font-bold md:text-center'>Track Order</h1>
             </div>
-      {currentOrder?.shopOrders?.map((shopOrder,index)=>(
-        <div className='bg-white p-4 rounded-2xl shadow-md border border-orange-100 space-y-4' key={index}>
-         <div>
-            <p className='text-lg font-bold mb-1 text-[#ff4d2d]'>{shopOrder.shop.name}</p>
-            <p className='text-xs text-gray-500 mb-3 flex items-center gap-1'>
-                <IoLocationSharp size={14} />
-                {shopOrder.shop.address || 'Shop location not available'}
-            </p>
-            <p className='font-semibold'><span>Items:</span> {shopOrder.shopOrderItems?.map(i=>i.name).join(",")}</p>
-            <div className='mt-2 space-y-1 text-sm'>
-                <p><span className='font-semibold text-gray-700'>Items Total:</span> ₹{shopOrder.itemsTotal || shopOrder.subtotal}</p>
-                {shopOrder.deliveryFee > 0 && <p><span className='font-semibold text-gray-700'>Delivery Fee:</span> ₹{shopOrder.deliveryFee}</p>}
-                {shopOrder.platformFee > 0 && <p><span className='font-semibold text-gray-700'>Platform Fee:</span> ₹{shopOrder.platformFee}</p>}
-                {shopOrder.tax > 0 && <p><span className='font-semibold text-gray-700'>Tax:</span> ₹{shopOrder.tax}</p>}
-                <p className='text-lg font-bold border-t border-gray-100 pt-1 mt-1 text-gray-900'>Total: ₹{shopOrder.totalAmount || (Number(shopOrder.itemsTotal || shopOrder.subtotal || 0) + Number(shopOrder.deliveryFee || 0) + Number(shopOrder.platformFee || 0) + Number(shopOrder.tax || 0))}</p>
-            </div>
-            <p className='mt-6'><span className='font-semibold'>Delivery address:</span> {currentOrder.deliveryAddress?.text}</p>
-         </div>
-         {shopOrder.status!="delivered"?<>
-{shopOrder.assignedDeliveryBoy?
-<div className='text-sm text-gray-700'>
-<p className='font-semibold'><span>Delivery Boy Name:</span> {shopOrder.assignedDeliveryBoy.fullName}</p>
-<p className='font-semibold'><span>Delivery Boy contact No.:</span> {shopOrder.assignedDeliveryBoy.mobile}</p>
-</div>:<p className='font-semibold'>Delivery Boy is not assigned yet.</p>}
-         </>:<p className='text-green-600 font-semibold text-lg'>Delivered</p>}
+            {currentOrder?.shopOrders?.map((shopOrder, index) => (
+                <div className='bg-white p-4 rounded-2xl shadow-md border border-orange-100 space-y-4' key={index}>
+                    <div>
+                        <p className='text-lg font-bold mb-1 text-[#ff4d2d]'>{shopOrder.shop.name}</p>
+                        <p className='text-xs text-gray-500 mb-3 flex items-center gap-1'>
+                            <IoLocationSharp size={14} />
+                            {shopOrder.shop.address || 'Shop location not available'}
+                        </p>
+                        <p className='font-semibold'><span>Items:</span> {shopOrder.shopOrderItems?.map(i => i.name).join(", ")}</p>
+                        <div className='mt-2 space-y-1 text-sm'>
+                            <p><span className='font-semibold text-gray-700'>Items Total:</span> ₹{shopOrder.itemsTotal || shopOrder.subtotal}</p>
+                            {shopOrder.deliveryFee > 0 && <p><span className='font-semibold text-gray-700'>Delivery Fee:</span> ₹{shopOrder.deliveryFee}</p>}
+                            {shopOrder.platformFee > 0 && <p><span className='font-semibold text-gray-700'>Platform Fee:</span> ₹{shopOrder.platformFee}</p>}
+                            {shopOrder.tax > 0 && <p><span className='font-semibold text-gray-700'>Tax:</span> ₹{shopOrder.tax}</p>}
+                            <p className='text-lg font-bold border-t border-gray-100 pt-1 mt-1 text-gray-900'>Total: ₹{shopOrder.totalAmount || (Number(shopOrder.itemsTotal || shopOrder.subtotal || 0) + Number(shopOrder.deliveryFee || 0) + Number(shopOrder.platformFee || 0) + Number(shopOrder.tax || 0))}</p>
+                        </div>
+                        <p className='mt-6'><span className='font-semibold'>Delivery address:</span> {currentOrder.deliveryAddress?.text}</p>
+                    </div>
+                    {shopOrder.status !== "delivered" ? <>
+                        {shopOrder.assignedDeliveryBoy ?
+                            <div className='text-sm text-gray-700'>
+                                <p className='font-semibold'><span>Delivery Boy Name:</span> {shopOrder.assignedDeliveryBoy.fullName}</p>
+                                <p className='font-semibold'><span>Delivery Boy contact No.:</span> {shopOrder.assignedDeliveryBoy.mobile}</p>
+                            </div> : <p className='font-semibold'>Delivery Boy is not assigned yet.</p>}
+                    </> : <p className='text-green-600 font-semibold text-lg'>Delivered</p>}
 
-{(shopOrder.assignedDeliveryBoy && shopOrder.status !== "delivered") && (
-  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-    <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
-        <span className='animate-pulse w-2 h-2 bg-blue-500 rounded-full'></span>
-        {shopOrder.status === "accepted" && "Delivery partner has accepted your order and is heading to the shop."}
-        {shopOrder.status === "picked up" && "Delivery partner has picked up your order!"}
-        {shopOrder.status === "out of delivery" && "Delivery partner is on the way to your location!"}
-        {(!["accepted", "picked up", "out of delivery"].includes(shopOrder.status)) && "Your delivery boy is on the way!"}
-    </p>
-    <p className='text-xs text-blue-500 mt-1 ml-4'>Please contact them at the number above for any updates.</p>
-  </div>
-)}
-
-
-
+                    {(shopOrder.assignedDeliveryBoy && shopOrder.status !== "delivered") && (
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
+                                <span className='animate-pulse w-2 h-2 bg-blue-500 rounded-full'></span>
+                                {shopOrder.status === "accepted" && "Delivery partner has accepted your order and is heading to the shop."}
+                                {shopOrder.status === "picked up" && "Delivery partner has picked up your order!"}
+                                {shopOrder.status === "out of delivery" && "Delivery partner is on the way to your location!"}
+                                {(!["accepted", "picked up", "out of delivery"].includes(shopOrder.status)) && "Your delivery boy is on the way!"}
+                            </p>
+                            <p className='text-xs text-blue-500 mt-1 ml-4'>Please contact them at the number above for any updates.</p>
+                        </div>
+                    )}
+                </div>
+            ))}
         </div>
-      ))}
-
-
-
-        </div>
-    )
+    );
 }
 
-export default TrackOrderPage
+export default TrackOrderPage;

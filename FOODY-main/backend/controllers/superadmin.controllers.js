@@ -1,6 +1,6 @@
 import User from "../models/user.model.js";
 import Category from "../models/category.model.js";
-import UserType from "../models/userType.model.js";
+import UserType from "../models/usertype.model.js";
 import uploadToCloudinary from "../utils/s3Upload.js";
 
 // Get all pending owners for approval

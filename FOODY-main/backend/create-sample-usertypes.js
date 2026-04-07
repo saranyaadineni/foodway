@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import UserType from "./models/userType.model.js";
+import UserType from "./models/usertype.model.js";
 
 dotenv.config();
 

@@ -155,6 +155,16 @@ const startServer = async () => {
       console.log(`📡 Allowed Origins: ${allowedOrigins.join(", ")}`);
     });
 
+    server.on("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(`❌ Port ${port} is already in use.`);
+        console.log(`💡 Suggestion: Kill the process using this port or try a different one (e.g., PORT=${parseInt(port) + 1} npm start)`);
+        process.exit(1);
+      } else {
+        console.error("❌ Server error:", error);
+      }
+    });
+
   } catch (error) {
     console.error("❌ Startup error:", error);
     process.exit(1);

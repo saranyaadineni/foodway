@@ -10,9 +10,14 @@ const itemRouter=express.Router()
 itemRouter.post("/add-item",isAuth,upload.single("image"),addItem)
 itemRouter.post("/edit-item/:itemId",isAuth,upload.single("image"),editItem)
 itemRouter.get("/get-by-id/:itemId",isAuth,getItemById)
-itemRouter.get("/delete/:itemId",isAuth,deleteItem)
+itemRouter.delete("/delete-item/:itemId",isAuth,deleteItem) // Changed from GET to DELETE
 itemRouter.post("/rating",isAuth,rating)
 itemRouter.put("/update-stock/:itemId",isAuth,updateStockStatus)
+
+// Helper GET route for browser testing (not for production use)
+itemRouter.get("/test-delete/:itemId", isAuth, (req, res) => {
+    res.status(405).json({ message: "To delete an item, please use the DELETE method on /api/item/delete-item/:itemId" });
+});
 
 // Public routes (accessible without authentication)
 itemRouter.get("/get-by-city/:city",getItemsInCity)

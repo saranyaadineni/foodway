@@ -137,7 +137,19 @@ app.use("/categories", categoryRouter);
 app.use("/rating", ratingRouter);
 
 app.get("/", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", message: "FOODY Backend API is live" });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date() });
+});
+
+// 404/405 Handler - place after all routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: "Endpoint not found", 
+    suggestion: `Ensure you're using the correct path and method (${req.method}). Check the documentation.`
+  });
 });
 
 cron.schedule("0 */2 * * *", () => {

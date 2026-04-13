@@ -16,7 +16,7 @@ orderRouter.get("/get-current-orders",isAuth,getCurrentOrders)
 orderRouter.post("/send-delivery-otp",isAuth,sendDeliveryOtp)
 orderRouter.post("/verify-delivery-otp",isAuth,verifyDeliveryOtp)
 orderRouter.post("/update-status/:orderId/:shopId",isAuth,updateOrderStatus)
-orderRouter.get('/accept-order/:assignmentId',isAuth,acceptOrder)
+orderRouter.post('/accept-order/:assignmentId',isAuth,acceptOrder) // Changed from GET to POST
 orderRouter.get('/get-order-by-id/:orderId',isAuth,getOrderById)
 orderRouter.get('/get-today-deliveries',isAuth,getTodayDeliveries)
 orderRouter.get('/delivery-counts',isAuth,getDeliveryCounts)

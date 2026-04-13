@@ -170,7 +170,7 @@ export const itemAPI = {
     api.get(`/api/item/get-by-shop/${shopId}`),
 
   deleteItem: (itemId) =>
-    api.delete(`/api/item/delete/${itemId}`),
+    api.delete(`/api/item/delete-item/${itemId}`),
 
   updateStock: (itemId, stockStatus) =>
     api.put(`/api/item/update-stock/${itemId}`, {
@@ -206,7 +206,7 @@ export const orderAPI = {
     api.get("/api/order/get-assignments"),
 
   acceptOrder: (assignmentId) =>
-    api.get(`/api/order/accept-order/${assignmentId}`),
+    api.post(`/api/order/accept-order/${assignmentId}`),
 
   getCurrentOrders: () =>
     api.get("/api/order/get-current-orders"),
@@ -250,7 +250,7 @@ export const orderAPI = {
     }),
 
   updateSpecialInstructions: (orderId, instructions) =>
-    api.post(`/api/order/update-instructions/${orderId}`, {
+    api.put(`/api/order/update-special-instructions/${orderId}`, {
       instructions,
     }),
 };

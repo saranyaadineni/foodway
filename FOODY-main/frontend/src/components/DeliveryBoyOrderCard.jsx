@@ -5,7 +5,7 @@ import { orderAPI, getImageUrl } from '../api'
 import { useDispatch } from 'react-redux'
 import { updateOrderStatus } from '../redux/userSlice'
 
-function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
+function DeliveryBoyOrderCard({ data, onOrderUpdate, showMessage }) {
     const dispatch = useDispatch()
     const [showOtpBox, setShowOtpBox] = useState(false)
     const [otp, setOtp] = useState("")
@@ -18,30 +18,31 @@ function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
             const shopId = data.shopOrders.shop?._id || data.shopOrders.shop;
             await orderAPI.updateOrderStatus(data._id, shopId, status)
             dispatch(updateOrderStatus({ orderId: data._id, status, shopId }))
+            if (showMessage) showMessage(`Order ${status} successfully`, 'success')
             if (onOrderUpdate) {
                 onOrderUpdate()
             }
         } catch (error) {
-            setMessage(error.response?.data?.message || "Failed to update status")
+            const msg = error.response?.data?.message || "Failed to update status"
+            setMessage(msg)
+            if (showMessage) showMessage(msg, 'error')
         }
         setLoading(false)
     }
 
-    const sendOtp = async () => {
-        // Delivery boy should not generate OTP; only prompt for entry
-        setShowOtpBox(true)
-        setMessage('Ask customer to generate OTP from their app.')
-    }
-
     const verifyOtp = async () => {
         if (!otp || otp.trim().length !== 4) {
-            setMessage("Please enter a valid 4-digit OTP")
+            const msg = "Please enter a valid 4-digit OTP"
+            setMessage(msg)
+            if (showMessage) showMessage(msg, 'error')
             return
         }
         setLoading(true)
         try {
             const result = await orderAPI.verifyDeliveryOtp(data._id, data.shopOrders._id, otp.trim())
-            setMessage(result.data.message)
+            const msg = result.data.message
+            setMessage(msg)
+            if (showMessage) showMessage(msg, 'success')
             // Update the order status locally and notify parent component
             dispatch(updateOrderStatus({ orderId: data._id, status: 'delivered' }))
             setOtp("")
@@ -51,24 +52,37 @@ function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
                 onOrderUpdate()
             }
         } catch (error) {
-            setMessage(error.response?.data?.message || "Invalid OTP")
+            const msg = error.response?.data?.message || "Invalid OTP"
+            setMessage(msg)
+            if (showMessage) showMessage(msg, 'error')
         }
         setLoading(false)
     }
 
     return (
-        <div className='bg-white rounded-lg shadow p-4 space-y-4'>
+        <div className='bg-white rounded-lg shadow p-4 space-y-4 border border-gray-100'>
             {/* Customer Information */}
-            <div>
-                <h2 className='text-lg font-semibold text-gray-800'>{data.user.fullName}</h2>
-                <p className='text-sm text-gray-500'>{data.user.email}</p>
-                <p className='flex items-center gap-2 text-sm text-gray-600 mt-1'>
-                    <MdPhone />
-                    <span>{data.user.mobile}</span>
-                </p>
-                <p className='text-sm text-gray-600'>
-                    Payment: {data.paymentMethod === "online" ? (data.payment ? "Paid" : "Pending") : "Cash on Delivery"}
-                </p>
+            <div className='flex justify-between items-start'>
+                <div>
+                    <h2 className='text-lg font-bold text-gray-900'>{data.user.fullName}</h2>
+                    <p className='text-sm text-gray-500 font-medium'>{data.user.email}</p>
+                    <p className='flex items-center gap-2 text-sm text-gray-600 mt-1'>
+                        <MdPhone className='text-[#fc8019]' />
+                        <span>{data.user.mobile}</span>
+                    </p>
+                </div>
+                <div className='text-right space-y-1'>
+                    {data.paymentMethod === "online" ? (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${data.payment ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {data.payment ? "Paid" : "Unpaid"}
+                        </span>
+                    ) : (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${data.payment ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {data.payment ? "Paid" : "COD Pending"}
+                        </span>
+                    )}
+                    <p className='text-[10px] font-bold text-gray-400 uppercase'>Mode: {data.paymentMethod?.toUpperCase()}</p>
+                </div>
             </div>
 
             {/* Delivery Address */}
@@ -95,7 +109,7 @@ function DeliveryBoyOrderCard({ data, onOrderUpdate }) {
             <div className='flex space-x-4 overflow-x-auto pb-2'>
                 {data.shopOrders.shopOrderItems.map((item, index) => (
                         <div key={index} className='flex-shrink-0 w-40 border rounded-lg p-2 bg-white'>
-                            <img src={getImageUrl(item.item.image)} alt="" className='w-full h-24 object-cover rounded' />
+                            <img src={getImageUrl(item?.item?.image || item?.image)} alt={item.name} className='w-full h-24 object-cover rounded' />
                             <p className='text-sm font-semibold mt-1'>{item.name}</p>
                         <p className='text-xs text-gray-500'>Qty: {item.quantity} x ₹{item.price}</p>
                     </div>

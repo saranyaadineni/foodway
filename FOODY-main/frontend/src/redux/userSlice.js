@@ -231,11 +231,19 @@ const userSlice = createSlice({
         
         // Update shop-specific status if shopId is provided
         if (shopId && order.shopOrders) {
-          const shopOrder = order.shopOrders.find(so => {
-            const currentShopId = so.shop?._id || so.shop;
-            return String(currentShopId) === String(shopId);
-          });
-          if (shopOrder) shopOrder.status = status;
+          if (Array.isArray(order.shopOrders)) {
+            const shopOrder = order.shopOrders.find(so => {
+              const currentShopId = so.shop?._id || so.shop;
+              return String(currentShopId) === String(shopId);
+            });
+            if (shopOrder) shopOrder.status = status;
+          } else {
+            // Handle object case
+            const currentShopId = order.shopOrders.shop?._id || order.shopOrders.shop;
+            if (String(currentShopId) === String(shopId)) {
+              order.shopOrders.status = status;
+            }
+          }
         }
       }
     },

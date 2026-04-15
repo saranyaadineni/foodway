@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Nav from './Nav.jsx';
 import { useSelector, useDispatch } from 'react-redux';
-import { FaUtensils, FaStore, FaToggleOn, FaToggleOff, FaPen, FaStar, FaList, FaClipboardList } from "react-icons/fa";
+import { FaUtensils, FaStore, FaToggleOn, FaToggleOff, FaPen, FaStar, FaList, FaClipboardList, FaTrash } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import OwnerItemCard from './OwnerItemCard';
 import { setMyShopData, setActiveTab } from '../redux/ownerSlice';
@@ -475,10 +475,10 @@ function OwnerDashboard() {
 
                 <button
                   onClick={createCategory}
-                  disabled={loading}
+                  disabled={loading && !editingCategory}
                   className="bg-[#ff4d2d] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-orange-600 transition-all disabled:opacity-50"
                 >
-                  {loading ? <ClipLoader size={20} color="white" /> : "Add Category"}
+                  {(loading && !editingCategory) ? <ClipLoader size={20} color="white" /> : "Add Category"}
                 </button>
               </div>
 
@@ -500,20 +500,27 @@ function OwnerDashboard() {
                         {editingCategory === category._id ? (
                           <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <input
-                                type="text"
-                                value={editCategoryData.name}
-                                onChange={(e) => setEditCategoryData({ ...editCategoryData, name: e.target.value })}
-                                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
-                              />
-                              <input
-                                type="text"
-                                value={editCategoryData.description}
-                                onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
-                                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
-                              />
+                              <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-gray-600 ml-1 uppercase">Name</label>
+                                <input
+                                  type="text"
+                                  value={editCategoryData.name}
+                                  onChange={(e) => setEditCategoryData({ ...editCategoryData, name: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-gray-600 ml-1 uppercase">Description</label>
+                                <input
+                                  type="text"
+                                  value={editCategoryData.description}
+                                  onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
+                                />
+                              </div>
                             </div>
                             <div>
+                              <label className="text-xs font-bold text-gray-600 ml-1 uppercase block mb-1">Image</label>
                               <input
                                 type="file"
                                 accept="image/*"
@@ -533,13 +540,14 @@ function OwnerDashboard() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => updateCategory(category._id)}
-                                className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold"
+                                disabled={loading && editingCategory === category._id}
+                                className="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-green-700 transition-all flex items-center gap-2"
                               >
-                                Save
+                                {loading && editingCategory === category._id ? <ClipLoader size={16} color="white" /> : "Save Changes"}
                               </button>
                               <button
                                 onClick={cancelEditCategory}
-                                className="bg-gray-500 text-white px-4 py-2 rounded-xl text-sm font-bold"
+                                className="bg-gray-500 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-gray-600 transition-all"
                               >
                                 Cancel
                               </button>
@@ -556,22 +564,24 @@ function OwnerDashboard() {
                                 />
                               )}
                               <div>
-                                <h4 className="font-bold text-gray-900">{category.name}</h4>
+                                <h4 className="font-bold text-gray-900 text-lg">{category.name}</h4>
                                 <p className="text-sm text-gray-500">{category.description}</p>
                               </div>
                             </div>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => startEditCategory(category)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                                className="p-3 text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                                title="Edit Category"
                               >
-                                <FaPen size={16} />
+                                <FaPen size={18} />
                               </button>
                               <button
                                 onClick={() => deleteCategory(category._id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-all"
+                                className="p-3 text-red-600 hover:bg-red-50 rounded-full transition-all"
+                                title="Delete Category"
                               >
-                                <FaUtensils size={16} />
+                                <FaTrash size={18} />
                               </button>
                             </div>
                           </div>

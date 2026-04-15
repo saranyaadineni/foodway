@@ -16,6 +16,22 @@ function MyOrders() {
   const navigate = useNavigate()
 const dispatch=useDispatch()
   const [searchTerm, setSearchTerm] = useState('')
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const showMessage = (message, type = 'success') => {
+    if (type === 'success') {
+      setSuccess(message);
+      setError('');
+    } else {
+      setError(message);
+      setSuccess('');
+    }
+    setTimeout(() => {
+      setSuccess('');
+      setError('');
+    }, 3000);
+  };
   
   // Fetch orders data
   useGetMyOrders()
@@ -64,6 +80,20 @@ const dispatch=useDispatch()
 
   return (
     <div className='w-full min-h-screen bg-[#fff9f6] flex justify-center px-4'>
+      {/* Message Notifications */}
+      <div className="fixed top-24 right-4 z-50 flex flex-col gap-2">
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg animate-fade-in-down">
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl shadow-lg animate-fade-in-down">
+            {error}
+          </div>
+        )}
+      </div>
+
       <div className='w-full max-w-[800px] p-4'>
 
         <div className='flex items-center gap-[20px] mb-6 '>
@@ -91,15 +121,15 @@ const dispatch=useDispatch()
               <ErrorBoundary key={`error-boundary-${index}`}>
                 {userData?.role=="user" ?
                   (
-                    <UserOrderCard data={order} key={index}/>
+                    <UserOrderCard data={order} key={index} showMessage={showMessage}/>
                   ) :
                   userData?.role=="owner" ?
                   (
-                    <OwnerOrderCard data={order} key={index}/>
+                    <OwnerOrderCard data={order} key={index} showMessage={showMessage}/>
                   ) :
                   userData?.role=="deliveryBoy" ?
                   (
-                    <DeliveryBoyOrderCard data={order} key={index}/>
+                    <DeliveryBoyOrderCard data={order} key={index} showMessage={showMessage}/>
                   ) : null
                 }
               </ErrorBoundary>

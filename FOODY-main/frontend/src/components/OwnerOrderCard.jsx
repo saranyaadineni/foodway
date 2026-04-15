@@ -3,7 +3,7 @@ import { MdPhone } from "react-icons/md";
 import { useDispatch } from 'react-redux';
 import { updateOrderStatus, setMyOrders } from '../redux/userSlice';
 import { orderAPI, getImageUrl } from '../api';
-function OwnerOrderCard({ data }) {
+function OwnerOrderCard({ data, showMessage }) {
     const [availableBoys,setAvailableBoys]=useState([])
     const dispatch=useDispatch()
     
@@ -17,28 +17,43 @@ function OwnerOrderCard({ data }) {
             const result=await orderAPI.updateStatus(orderId, shopId, status)
              dispatch(updateOrderStatus({orderId,shopId,status}))
              setAvailableBoys(result.data.availableBoys)
+             if (showMessage) {
+                showMessage(`Order ${status} successfully`, 'success')
+             }
              // Refresh orders for key status changes
              if(['confirmed','preparing','out of delivery','delivered'].includes(status)){
                 const res = await orderAPI.getMyOrders()
                 dispatch(setMyOrders(res.data))
              }
-        } catch {
-            // Silently ignore to avoid console noise
+        } catch (error) {
+            if (showMessage) {
+                showMessage('Failed to update status', 'error')
+            }
         }
     }
 
 
   
     return (
-        <div className='bg-white rounded-lg shadow p-4 space-y-4'>
-            <div>
-                <h2 className='text-lg font-semibold text-gray-800'>{data?.user?.fullName || 'Unknown Customer'}</h2>
-                <p className='text-sm text-gray-500'>{data?.user?.email || 'No email'}</p>
-                <p className='flex items-center gap-2 text-sm text-gray-600 mt-1'><MdPhone /><span>{data?.user?.mobile || 'No phone'}</span></p>
-                {data?.paymentMethod === "online" ? 
-                    <p className='gap-2 text-sm text-gray-600'>payment: {data?.payment ? "true" : "false"}</p> : 
-                    <p className='gap-2 text-sm text-gray-600'>Payment Method: {data?.paymentMethod || 'Unknown'}</p>
-                }
+        <div className='bg-white rounded-lg shadow p-4 space-y-4 border border-gray-100'>
+            <div className='flex justify-between items-start'>
+                <div>
+                    <h2 className='text-lg font-bold text-gray-900'>{data?.user?.fullName || 'Unknown Customer'}</h2>
+                    <p className='text-sm text-gray-500 font-medium'>{data?.user?.email || 'No email'}</p>
+                    <p className='flex items-center gap-2 text-sm text-gray-600 mt-1'><MdPhone className='text-[#fc8019]' /><span>{data?.user?.mobile || 'No phone'}</span></p>
+                </div>
+                <div className='flex flex-col items-end gap-2'>
+                    {data?.paymentMethod === "online" ? (
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${data?.payment ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                            {data?.payment ? "Paid (Online)" : "Unpaid (Online)"}
+                        </span>
+                    ) : (
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${data?.payment ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
+                            {data?.payment ? "Paid (COD)" : "Cash on Delivery (Pending)"}
+                        </span>
+                    )}
+                    <p className='text-[10px] font-bold text-gray-400 uppercase'>Payment Method: {data?.paymentMethod || 'Unknown'}</p>
+                </div>
             </div>
 
             <div className='flex items-start flex-col gap-2 text-gray-600 text-sm'>
@@ -92,10 +107,15 @@ function OwnerOrderCard({ data }) {
                 </span></span>
                 {/* Allow status changes unless status is out of delivery or rejected */}
                 {(!data?.isCancelled && (data?.shopOrders?.status !== "out of delivery" && data?.shopOrders?.status !== "rejected")) ? (
-                    <select className='rounded-md border px-3 py-1 text-sm focus:outline-none focus:ring-2 border-[#ff4d2d] text-[#ff4d2d]' onChange={(e)=>handleUpdateStatus(data._id,data?.shopOrders?.shop?._id,e.target.value)}>
-                        <option value="">Change Status</option>
+                    <select 
+                        className='rounded-md border px-3 py-1 text-sm focus:outline-none focus:ring-2 border-[#ff4d2d] text-[#ff4d2d] bg-white cursor-pointer hover:bg-orange-50 transition-colors' 
+                        value={data?.shopOrders?.status || ""}
+                        onChange={(e)=>handleUpdateStatus(data._id,data?.shopOrders?.shop?._id,e.target.value)}
+                    >
+                        <option value="" disabled>Change Status</option>
                         {/* From pending: can choose confirmed, rejected, preparing, out of delivery */}
                         {(!data?.shopOrders?.status || data?.shopOrders?.status === "pending") && <>
+                          <option value="pending" disabled>Pending</option>
                           <option value="confirmed">Confirm</option>
                           <option value="rejected">Reject</option>
                           <option value="preparing">Preparing</option>
@@ -103,12 +123,14 @@ function OwnerOrderCard({ data }) {
                         </>}
                         {/* From confirmed: can switch to preparing, out of delivery, or reject */}
                         {data?.shopOrders?.status === "confirmed" && <>
+                          <option value="confirmed" disabled>Confirmed</option>
                           <option value="preparing">Preparing</option>
                           {data?.deliveryAddress?.text && <option value="out of delivery">Out Of Delivery</option>}
                           <option value="rejected">Reject</option>
                         </>}
                         {/* From preparing: can switch to out of delivery or reject */}
                         {data?.shopOrders?.status === "preparing" && <>
+                          <option value="preparing" disabled>Preparing</option>
                           {data?.deliveryAddress?.text && <option value="out of delivery">Out Of Delivery</option>}
                           <option value="rejected">Reject</option>
                         </>}

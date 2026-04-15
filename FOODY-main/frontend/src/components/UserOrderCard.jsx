@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux'
 import { ClipLoader } from 'react-spinners'
 import { ratingAPI, orderAPI, getImageUrl } from '../api'
 
-function UserOrderCard({ data }) {
+function UserOrderCard({ data, showMessage }) {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const { myOrders } = useSelector(state => state.user)
@@ -19,92 +19,149 @@ function UserOrderCard({ data }) {
     const [otpLoading, setOtpLoading] = useState(false)
     const [showOtp, setShowOtp] = useState(false)
     const [comments, setComments] = useState({})
-    
-    const handleDownloadInvoice = (shopOrder) => {
-        try {
-            const win = window.open('', '_blank')
-            if (!win) {
-                alert('Please allow popups to download the invoice.')
-                return
+
+    useEffect(() => {
+        const fetchRatings = async () => {
+            try {
+                const res = await ratingAPI.getOrderRating(data._id)
+                const ratings = res.data.ratings || []
+                const ratingsMap = {}
+                ratings.forEach(r => {
+                    if (r.type === 'item') {
+                        ratingsMap[`${r.target}-item`] = r.stars
+                    } else if (r.type === 'shop') {
+                        ratingsMap[`${r.shopOrderId}-shop`] = r.stars
+                    } else if (r.type === 'deliveryBoy') {
+                        ratingsMap[`${r.shopOrderId}-deliveryBoy`] = r.stars
+                    }
+                })
+                setEntityRatings(ratingsMap)
+            } catch (err) {
+                console.error('Error fetching ratings:', err)
             }
-
-            const items = (shopOrder.receipt?.items && shopOrder.receipt.items.length
-                ? shopOrder.receipt.items
-                : (shopOrder.shopOrderItems || []).map(i => ({
-                    name: i.name,
-                    price: i.price,
-                    quantity: i.quantity
-                }))
-            )
-
-            const rows = items.map(i => `
-              <tr>
-                <td style="padding:4px 8px;border:1px solid #ddd;">${i.name}</td>
-                <td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">${i.quantity}</td>
-                <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;">₹${i.price}</td>
-                <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;">₹${Number(i.price) * Number(i.quantity)}</td>
-              </tr>
-            `).join('')
-
-            const calculatedSubtotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0)
-            const itemsTotal = shopOrder.itemsTotal || shopOrder.subtotal || calculatedSubtotal
-            const deliveryFee = shopOrder.deliveryFee || 0
-            const platformFee = shopOrder.platformFee || 0
-            const tax = shopOrder.tax || 0
-            const grandTotal = shopOrder.totalAmount || (Number(itemsTotal) + Number(deliveryFee) + Number(platformFee) + Number(tax))
-            const receiptNumber = shopOrder.receipt?.receiptNumber || `R-${data.orderId || data._id.slice(-6)}`
-
-            win.document.write(`
-              <!doctype html>
-              <html>
-              <head>
-                <meta charset="utf-8" />
-                <title>Invoice ${receiptNumber}</title>
-              </head>
-              <body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding:24px; color:#111827;">
-                <h1 style="font-size:20px;margin-bottom:4px;">FoodWay Invoice</h1>
-                <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;">Receipt: ${receiptNumber}</p>
-
-                <div style="margin-bottom:16px;font-size:13px;">
-                  <p style="margin:0;"><strong>Customer:</strong> ${data.user?.fullName || ''}</p>
-                  <p style="margin:0;"><strong>Email:</strong> ${data.user?.email || ''}</p>
-                  <p style="margin:0;"><strong>Order ID:</strong> ${data.orderId || data._id}</p>
-                  <p style="margin:0;"><strong>Date:</strong> ${formatDate(data.createdAt)}</p>
-                </div>
-
-                <table style="border-collapse:collapse;width:100%;font-size:13px;margin-bottom:12px;">
-                  <thead>
-                    <tr style="background:#f3f4f6;">
-                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:left;">Item</th>
-                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">Qty</th>
-                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Price</th>
-                      <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rows}
-                  </tbody>
-                </table>
-
-                <div style="text-align:right;font-size:14px;margin-top:8px;">
-                  <p style="margin:0;"><strong>Items Total:</strong> ₹${itemsTotal}</p>
-                  ${deliveryFee > 0 ? `<p style="margin:0;"><strong>Delivery Fee:</strong> ₹${deliveryFee}</p>` : ''}
-                  ${platformFee > 0 ? `<p style="margin:0;"><strong>Platform Fee:</strong> ₹${platformFee}</p>` : ''}
-                  ${tax > 0 ? `<p style="margin:0;"><strong>Tax:</strong> ₹${tax}</p>` : ''}
-                  <p style="margin:8px 0 0 0;font-size:16px;"><strong>Grand Total:</strong> ₹${grandTotal}</p>
-                </div>
-
-                <p style="margin-top:24px;font-size:12px;color:#6b7280;">Thank you for ordering with FoodWay.</p>
-              </body>
-              </html>
-            `)
-            win.document.close()
-            win.focus()
-            win.print()
-        } catch (e) {
-            console.error('invoice download error', e)
-            alert('Failed to generate invoice. Please try again.')
         }
+        if (data.shopOrders.some(so => so.status === 'delivered')) {
+            fetchRatings()
+        }
+    }, [data._id, data.shopOrders])
+
+    const handleItemRating = async (shopOrder, itemId, stars) => {
+        try {
+            const comment = comments[`${itemId}-item`] || ''
+            await ratingAPI.submitRating({
+                orderId: data._id,
+                shopOrderId: shopOrder._id,
+                type: 'item',
+                targetId: itemId,
+                stars,
+                comment
+            })
+            setEntityRatings(prev => ({ ...prev, [`${itemId}-item`]: stars }))
+            if (showMessage) showMessage('Item rated successfully!', 'success')
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to submit rating'
+            if (showMessage) showMessage(msg, 'error')
+        }
+    }
+
+    const handleEntityRating = async (shopOrder, type, stars) => {
+        try {
+            const key = type === 'shop' ? `${shopOrder._id}-shop` : `${shopOrder._id}-deliveryBoy`
+            const targetId = type === 'shop' ? shopOrder.shop._id : shopOrder.assignedDeliveryBoy._id
+            const comment = comments[key] || ''
+            
+            await ratingAPI.submitRating({
+                orderId: data._id,
+                shopOrderId: shopOrder._id,
+                type,
+                targetId,
+                stars,
+                comment
+            })
+            setEntityRatings(prev => ({ ...prev, [key]: stars }))
+            if (showMessage) showMessage(`${type === 'shop' ? 'Restaurant' : 'Delivery'} rated successfully!`, 'success')
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to submit rating'
+            if (showMessage) showMessage(msg, 'error')
+        }
+    }
+
+    const handleDownloadInvoice = (shopOrder) => {
+        const receipt = shopOrder.receipt
+        if (!receipt) return
+
+        const printWindow = window.open('', '_blank')
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Invoice - ${receipt.receiptNumber}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ff4d2d; padding-bottom: 10px; }
+                        .logo { color: #ff4d2d; font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+                        .receipt-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                        th { background-color: #f8f8f8; text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+                        td { padding: 12px; border-bottom: 1px solid #eee; }
+                        .totals { text-align: right; }
+                        .total-row { font-weight: bold; font-size: 1.1em; color: #000; }
+                        .footer { text-align: center; margin-top: 50px; font-size: 0.8em; color: #777; border-top: 1px solid #eee; pt: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="logo">FOODY</div>
+                        <p>Official Order Receipt</p>
+                    </div>
+                    <div class="receipt-info">
+                        <div>
+                            <strong>Order ID:</strong> #${data.orderId || data._id.slice(-6)}<br>
+                            <strong>Receipt No:</strong> ${receipt.receiptNumber}<br>
+                            <strong>Date:</strong> ${new Date(receipt.generatedAt || Date.now()).toLocaleString()}
+                        </div>
+                        <div style="text-align: right">
+                            <strong>Restaurant:</strong> ${shopOrder.shop.name}<br>
+                            <strong>Customer:</strong> ${data.user?.fullName || 'Valued Customer'}
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(receipt.items || []).map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>₹${item.price}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>₹${item.price * item.quantity}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="totals">
+                        <p>Items Total: ₹${receipt.itemsTotal || receipt.subtotal}</p>
+                        ${receipt.deliveryFee > 0 ? `<p>Delivery Fee: ₹${receipt.deliveryFee}</p>` : ''}
+                        ${receipt.platformFee > 0 ? `<p>Platform Fee: ₹${receipt.platformFee}</p>` : ''}
+                        ${receipt.tax > 0 ? `<p>Tax: ₹${receipt.tax}</p>` : ''}
+                        <p class="total-row">Grand Total: ₹${receipt.totalAmount}</p>
+                    </div>
+                    <div class="footer">
+                        <p>Thank you for ordering with FOODY!</p>
+                        <p>This is a computer-generated receipt and does not require a physical signature.</p>
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); window.close(); }
+                    </script>
+                </body>
+            </html>
+        `)
+        printWindow.document.close()
     }
 
     const formatDate = (dateString) => {
@@ -115,59 +172,6 @@ function UserOrderCard({ data }) {
             year: "numeric"
         })
 
-    }
-
-    // Load any existing ratings for this order (persist star colors)
-    useEffect(() => {
-        const fetchExistingRatings = async () => {
-            try {
-                const res = await ratingAPI.getOrderRating(data._id)
-                if (res.data?.map) {
-                    setEntityRatings(res.data.map)
-                }
-            } catch (e) {
-                // non-blocking
-                console.log('load order ratings error', e?.response?.data || e)
-            }
-        }
-        if (data?.shopOrders?.length) fetchExistingRatings()
-    }, [data?._id, data?.shopOrders?.length])
-
-    const handleItemRating = async (shopOrder, itemId, stars) => {
-        try {
-            const key = `${itemId}-item`
-            if (entityRatings[key]) return
-            await ratingAPI.submitRating({
-                orderId: data._id,
-                shopOrderId: shopOrder._id,
-                type: 'item',
-                targetId: itemId,
-                stars
-            })
-            setEntityRatings(prev => ({ ...prev, [key]: stars }))
-        } catch (error) {
-            console.log('submit item rating error', error?.response?.data || error)
-        }
-    }
-
-    const handleEntityRating = async (shopOrder, type, stars) => {
-        try {
-            const key = `${shopOrder._id}-${type}`
-            if (entityRatings[key]) return
-            const targetId = type === 'shop' ? shopOrder.shop._id : shopOrder.assignedDeliveryBoy?._id
-            if (!targetId) return
-            await ratingAPI.submitRating({
-                orderId: data._id,
-                shopOrderId: shopOrder._id,
-                type,
-                targetId,
-                stars,
-                comment: comments[key] || ''
-            })
-            setEntityRatings(prev => ({ ...prev, [key]: stars }))
-        } catch (error) {
-            console.log('submit rating error', error?.response?.data || error)
-        }
     }
 
     const handleCancelOrder = async () => {
@@ -194,9 +198,12 @@ function UserOrderCard({ data }) {
                 return order
             })
             dispatch(setMyOrders(updatedOrders))
+            if (showMessage) showMessage('Order cancelled successfully', 'success')
         } catch (error) {
             console.error('Error cancelling order:', error)
-            alert(error.response?.data?.message || 'Failed to cancel order. Please try again.')
+            const msg = error.response?.data?.message || 'Failed to cancel order. Please try again.'
+            if (showMessage) showMessage(msg, 'error')
+            else alert(msg)
         } finally {
             setIsCancelling(false)
         }
@@ -239,9 +246,12 @@ function UserOrderCard({ data }) {
             dispatch(setMyOrders(updatedOrders))
             setIsEditingInstructions(false)
             setSpecialInstructions(trimmedInstructions)
+            if (showMessage) showMessage('Instructions updated successfully', 'success')
         } catch (error) {
             console.error('Error updating special instructions:', error)
-            setSpecialInstructionsError(error.response?.data?.message || 'Failed to update special instructions')
+            const msg = error.response?.data?.message || 'Failed to update special instructions'
+            setSpecialInstructionsError(msg)
+            if (showMessage) showMessage(msg, 'error')
         }
     }
 
@@ -250,14 +260,14 @@ function UserOrderCard({ data }) {
         setOtpLoading(true)
         try {
             const result = await orderAPI.sendDeliveryOtp(data._id, shopOrderId)
-            if (result.data.isExisting) {
-                setOtpMessage('Existing OTP resent successfully.')
-            } else {
-                setOtpMessage('New OTP generated and sent successfully.')
-            }
+            const msg = result.data.isExisting ? 'Existing OTP resent successfully.' : 'New OTP generated and sent successfully.'
+            setOtpMessage(msg)
+            if (showMessage) showMessage(msg, 'success')
             setShowOtp(true)
         } catch (error) {
-            setOtpMessage(error.response?.data?.message || 'Failed to generate OTP')
+            const msg = error.response?.data?.message || 'Failed to generate OTP'
+            setOtpMessage(msg)
+            if (showMessage) showMessage(msg, 'error')
         } finally {
             setOtpLoading(false)
         }
@@ -271,21 +281,30 @@ function UserOrderCard({ data }) {
 
 
     return (
-        <div className='bg-white rounded-lg shadow p-4 space-y-4'>
-            <div className='flex justify-between border-b pb-2'>
+        <div className='bg-white rounded-lg shadow p-4 space-y-4 border border-gray-100'>
+            <div className='flex justify-between border-b border-gray-50 pb-3'>
                 <div>
-                    <p className='font-semibold'>
-                        order #{data.orderId || data._id.slice(-6)}
+                    <p className='font-bold text-gray-900'>
+                        Order #{data.orderId || data._id.slice(-6)}
                     </p>
-                    <p className='text-sm text-gray-500'>
-                        Date: {formatDate(data.createdAt)}
+                    <p className='text-xs text-gray-400 font-medium'>
+                        {formatDate(data.createdAt)}
                     </p>
                 </div>
-                <div className='text-right'>
-                    {data.paymentMethod == "cod" ? <p className='text-sm text-gray-500'>{data.paymentMethod?.toUpperCase()}</p> : <p className='text-sm text-gray-500 font-semibold'>Payment: {data.payment ? "true" : "false"}</p>}
-
-                    <p className='font-medium text-blue-600'>
-                        {data.isCancelled ? 'cancelled' : data.shopOrders?.[0].status}
+                <div className='text-right space-y-1'>
+                    <div className='flex items-center justify-end gap-2'>
+                        {data.paymentMethod === "online" ? (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${data.payment ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {data.payment ? "Paid" : "Unpaid"}
+                            </span>
+                        ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${data.payment ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                {data.payment ? "Paid" : "COD Pending"}
+                            </span>
+                        )}
+                    </div>
+                    <p className={`text-xs font-bold uppercase tracking-tighter ${data.isCancelled ? 'text-red-500' : 'text-[#fc8019]'}`}>
+                        {data.isCancelled ? 'Cancelled' : data.shopOrders?.[0].status}
                     </p>
                 </div>
             </div>
@@ -297,11 +316,11 @@ function UserOrderCard({ data }) {
                     <div className='flex space-x-4 overflow-x-auto pb-2'>
                         {shopOrder.shopOrderItems.map((item, index) => (
                             <div key={index} className='flex-shrink-0 w-40 border rounded-lg p-2 bg-white"'>
-                                <img src={getImageUrl(item.item.image)} alt="" className='w-full h-24 object-cover rounded' />
+                                <img src={getImageUrl(item?.item?.image || item?.image)} alt={item.name} className='w-full h-24 object-cover rounded' />
                                 <p className='text-sm font-semibold mt-1'>{item.name}</p>
                                 <p className='text-xs text-gray-500'>Qty: {item.quantity} x ₹{item.price}</p>
 
-                                {shopOrder.status == "delivered" && (
+                                {shopOrder.status == "delivered" && item?.item && (
                                     <div className='flex space-x-1 mt-2'>
                                         {[1, 2, 3, 4, 5].map((star) => (
                                             <button

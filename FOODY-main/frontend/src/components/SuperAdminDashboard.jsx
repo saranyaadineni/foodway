@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, updateAboutContent, updateContactContent } from '../redux/userSlice';
+import { logout, setGlobalSettings } from '../redux/userSlice';
 import { authAPI, superAdminAPI, getImageUrl } from '../api';
 
 const SuperAdminDashboard = () => {
@@ -16,6 +16,15 @@ const SuperAdminDashboard = () => {
     // Content Management State
     const [editAbout, setEditAbout] = useState(aboutContent);
     const [editContact, setEditContact] = useState(contactContent);
+
+    // Sync content when Redux state changes (e.g. after refresh or update)
+    useEffect(() => {
+        setEditAbout(aboutContent);
+    }, [aboutContent]);
+
+    useEffect(() => {
+        setEditContact(contactContent);
+    }, [contactContent]);
 
     // Dashboard data
     const [dashboardStats, setDashboardStats] = useState({
@@ -68,14 +77,128 @@ const SuperAdminDashboard = () => {
         }
     };
 
-    const handleSaveAbout = () => {
-        dispatch(updateAboutContent(editAbout));
-        showMessage('About content updated successfully!');
+    const handleSaveAbout = async () => {
+        const { title, description, mission } = editAbout;
+
+        // Title validation: 3-100 characters, no symbols at start
+        if (!title || !title.trim()) {
+            showMessage('Title cannot be empty', 'error');
+            return;
+        }
+        if (!/^[A-Za-z0-9]/.test(title.trim()) || title.trim().length < 3 || title.trim().length > 100) {
+            showMessage('Title must be 3-100 characters and start with a letter or number', 'error');
+            return;
+        }
+
+        // Description validation: 10-500 characters
+        if (!description || !description.trim()) {
+            showMessage('Description cannot be empty', 'error');
+            return;
+        }
+        if (description.trim().length < 10 || description.trim().length > 500) {
+            showMessage('Description must be between 10 and 500 characters', 'error');
+            return;
+        }
+
+        // Mission validation: 10-500 characters
+        if (!mission || !mission.trim()) {
+            showMessage('Mission Statement cannot be empty', 'error');
+            return;
+        }
+        if (mission.trim().length < 10 || mission.trim().length > 500) {
+            showMessage('Mission Statement must be between 10 and 500 characters', 'error');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res = await superAdminAPI.updateSettings({ aboutContent: editAbout });
+            dispatch(setGlobalSettings(res.data));
+            showMessage('About content updated successfully!');
+        } catch (error) {
+            console.error('Error updating about content:', error);
+            
+            // Fallback for when backend is not updated (404) or offline
+            if (error.response?.status === 404) {
+                dispatch(setGlobalSettings({ aboutContent: editAbout }));
+                showMessage('Saved to local session (Backend update pending)');
+            } else {
+                showMessage('Error updating about content', 'error');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleSaveContact = () => {
-        dispatch(updateContactContent(editContact));
-        showMessage('Contact information updated successfully!');
+    const handleSaveContact = async () => {
+        const { email, phone, address, mapUrl } = editContact;
+        
+        // Support Email validation
+        if (!email || !email.trim()) {
+            showMessage('Support email is required', 'error');
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showMessage('Please enter a valid email address', 'error');
+            return;
+        }
+        
+        if (email.length > 50) {
+            showMessage('Email must be under 50 characters', 'error');
+            return;
+        }
+
+        // Phone Number validation
+        if (!phone || !phone.trim()) {
+            showMessage('Phone number is required', 'error');
+            return;
+        }
+        
+        const phoneRegex = /^[0-9\s+()-]{10,20}$/;
+        if (!phoneRegex.test(phone)) {
+            showMessage('Please enter a valid phone number (10-20 characters)', 'error');
+            return;
+        }
+
+        // Office Address validation
+        if (!address || !address.trim()) {
+            showMessage('Office address is required', 'error');
+            return;
+        }
+
+        if (address.trim().length < 10 || address.trim().length > 200) {
+            showMessage('Office address must be between 10 and 200 characters', 'error');
+            return;
+        }
+
+        // Google Maps URL validation (if provided)
+        if (mapUrl && mapUrl.trim()) {
+            if (!mapUrl.trim().startsWith('https://www.google.com/maps/embed')) {
+                showMessage('Invalid Google Maps Embed URL. It should start with "https://www.google.com/maps/embed"', 'error');
+                return;
+            }
+        }
+
+        try {
+            setLoading(true);
+            const res = await superAdminAPI.updateSettings({ contactContent: editContact });
+            dispatch(setGlobalSettings(res.data));
+            showMessage('Contact information updated successfully!');
+        } catch (error) {
+            console.error('Error updating contact information:', error);
+
+            // Fallback for when backend is not updated (404) or offline
+            if (error.response?.status === 404) {
+                dispatch(setGlobalSettings({ contactContent: editContact }));
+                showMessage('Saved to local session (Backend update pending)');
+            } else {
+                showMessage('Error updating contact information', 'error');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Fetch dashboard statistics
@@ -125,7 +248,8 @@ const SuperAdminDashboard = () => {
         try {
             setLoading(true);
             await superAdminAPI.updateDeliveryBoyStatus(userId, action);
-            showMessage(`Delivery boy ${action}d successfully`);
+            const statusMsg = action === 'reject' ? 'Rejected' : 'approved';
+            showMessage(`Delivery boy ${statusMsg} successfully`);
             fetchPendingDeliveryBoys(); // Refresh the list
             fetchDashboardStats(); // Refresh stats
         } catch (error) {
@@ -141,7 +265,8 @@ const SuperAdminDashboard = () => {
         try {
             setLoading(true);
             await superAdminAPI.updateOwnerStatus(userId, action);
-            showMessage(`Owner ${action}d successfully`);
+            const statusMsg = action === 'reject' ? 'Rejected' : 'approved';
+            showMessage(`Owner ${statusMsg} successfully`);
             fetchPendingOwners(); // Refresh the list
             fetchDashboardStats(); // Refresh stats
         } catch (error) {
@@ -211,9 +336,10 @@ const SuperAdminDashboard = () => {
             if (term) {
                 const nameRegex = /^[A-Za-z\s]+$/;
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const phoneRegex = /^[0-9+()-\s]{3,20}$/; // Basic phone validation
                 
-                if (!nameRegex.test(term) && !emailRegex.test(term)) {
-                    setError('Please enter a valid Name or Email address');
+                if (!nameRegex.test(term) && !emailRegex.test(term) && !phoneRegex.test(term)) {
+                    setError('Please enter a valid Name, Email, or Phone number');
                     setUsers([]); // Clear list on invalid search
                     return;
                 }
@@ -504,10 +630,10 @@ const SuperAdminDashboard = () => {
                                     </select>
                                     <input
                                         type="text"
-                                        placeholder="Search by name or email..."
+                                        placeholder="Search by name, email, or phone..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className={`border ${error === 'Please enter a valid Name or Email address' ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-3 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
+                                        className={`border ${error === 'Please enter a valid Name, Email, or Phone number' ? 'border-red-500 ring-1 ring-red-200' : 'border-gray-300'} rounded-xl px-3 py-2.5 bg-white/80 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fc8019] hover:border-[#ff4d2d]/60 transition-all`}
                                     />
                                 </div>
                             </div>
@@ -741,7 +867,8 @@ const SuperAdminDashboard = () => {
                                         <input
                                             type="email"
                                             value={editContact.email}
-                                            onChange={(e) => setEditContact({ ...editContact, email: e.target.value })}
+                                            maxLength={50}
+                                            onChange={(e) => setEditContact(prev => ({ ...prev, email: e.target.value }))}
                                             className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
                                         />
                                     </div>
@@ -750,7 +877,11 @@ const SuperAdminDashboard = () => {
                                         <input
                                             type="text"
                                             value={editContact.phone}
-                                            onChange={(e) => setEditContact({ ...editContact, phone: e.target.value })}
+                                            maxLength={20}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/[^0-9\s+()-]/g, '');
+                                                setEditContact(prev => ({ ...prev, phone: val }));
+                                            }}
                                             className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
                                         />
                                     </div>
@@ -759,7 +890,8 @@ const SuperAdminDashboard = () => {
                                         <textarea
                                             rows="2"
                                             value={editContact.address}
-                                            onChange={(e) => setEditContact({ ...editContact, address: e.target.value })}
+                                            maxLength={200}
+                                            onChange={(e) => setEditContact(prev => ({ ...prev, address: e.target.value }))}
                                             className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all resize-none"
                                         ></textarea>
                                     </div>
@@ -768,10 +900,12 @@ const SuperAdminDashboard = () => {
                                         <input
                                             type="text"
                                             value={editContact.mapUrl}
-                                            onChange={(e) => setEditContact({ ...editContact, mapUrl: e.target.value })}
+                                            maxLength={500}
+                                            onChange={(e) => setEditContact(prev => ({ ...prev, mapUrl: e.target.value }))}
                                             placeholder="https://www.google.com/maps/embed?..."
                                             className="border border-gray-300 rounded-xl px-4 py-2.5 bg-white/80 focus:ring-2 focus:ring-[#fc8019] outline-none transition-all"
                                         />
+                                        <p className="text-[10px] text-gray-400 ml-1 font-medium italic">* Paste the 'src' attribute from Google Maps 'Embed a map' iframe</p>
                                     </div>
                                 </div>
                                 <button

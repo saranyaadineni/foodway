@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
+import { IoIosArrowRoundBack, IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../api";
 import { ClipLoader } from "react-spinners";
 
 function ForgotPassword() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -12,15 +13,11 @@ function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
-    } else if (step === 3) {
-      setStep(2);
-    } else {
-      navigate("/signin");
-    }
+    navigate("/signin");
   };
 
   const handleSendOtp = async () => {
@@ -31,12 +28,18 @@ function ForgotPassword() {
     }
     setLoading(true);
     try {
+      // Add a custom timeout for OTP sending if needed, though the backend should be fast now
       const result = await authAPI.sendOtp(email);
       console.log(result);
       setErr("");
       setStep(2);
     } catch (error) {
-      setErr(error?.response?.data?.message || "Failed to send OTP");
+      console.error("OTP send error:", error);
+      if (error.code === 'ECONNABORTED') {
+        setErr("Request timed out. The server might be waking up. Please try again in a few seconds.");
+      } else {
+        setErr(error?.response?.data?.message || error?.message || "Failed to send OTP");
+      }
     }
     setLoading(false);
   };
@@ -178,37 +181,55 @@ function ForgotPassword() {
         {/* Step 3: Reset Password */}
         {step === 3 && (
           <div>
-            <div className="mb-6">
+            <div className="mb-6 relative">
               <label
                 htmlFor="newPassword"
                 className="block text-gray-700 font-semibold mb-1 text-sm"
               >
                 New Password
               </label>
-              <input
-                type="password"
-                placeholder="Enter new password"
-                onChange={(e) => setNewPassword(e.target.value)}
-                value={newPassword}
-                required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#fc8019] bg-white/80 placeholder-gray-400 transition-all hover:border-[#ff2b85]/60"
-              />
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={newPassword}
+                  required
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#fc8019] bg-white/80 placeholder-gray-400 transition-all hover:border-[#ff2b85]/60 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#fc8019] transition-colors"
+                >
+                  {showNewPassword ? <IoMdEyeOff size={22} /> : <IoMdEye size={22} />}
+                </button>
+              </div>
             </div>
-            <div className="mb-6">
+            <div className="mb-6 relative">
               <label
                 htmlFor="confirmPassword"
                 className="block text-gray-700 font-semibold mb-1 text-sm"
               >
                 Confirm Password
               </label>
-              <input
-                type="password"
-                placeholder="Re-enter new password"
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                value={confirmPassword}
-                required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] bg-white/80 placeholder-gray-400 transition-all hover:border-[#fc8019]/60"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Re-enter new password"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={confirmPassword}
+                  required
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ff2b85] bg-white/80 placeholder-gray-400 transition-all hover:border-[#fc8019]/60 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#ff2b85] transition-colors"
+                >
+                  {showConfirmPassword ? <IoMdEyeOff size={22} /> : <IoMdEye size={22} />}
+                </button>
+              </div>
             </div>
             <button
               onClick={handleResetPassword}

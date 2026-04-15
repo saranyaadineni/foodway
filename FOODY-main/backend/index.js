@@ -94,6 +94,15 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(cookieParser());
 
+// Mount API routes EARLY
+app.use("/api/superadmin", superadminRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+app.use("/api/shop", shopRouter);
+app.use("/api/item", itemRouter);
+app.use("/api/order", orderRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/api/rating", ratingRouter);
 
 const io = new Server(server, {
   cors: {
@@ -117,15 +126,6 @@ app.use((req, res, next) => {
 socketHandler(io);
 
 
-app.use("/api/auth", authRouter);
-app.use("/api/user", userRouter);
-app.use("/api/superadmin", superadminRouter);
-app.use("/api/shop", shopRouter);
-app.use("/api/item", itemRouter);
-app.use("/api/order", orderRouter);
-app.use("/api/categories", categoryRouter);
-app.use("/api/rating", ratingRouter);
-
 // Extra compatibility: allow backends where /api is stripped by the proxy
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
@@ -146,6 +146,7 @@ app.get("/api/health", (req, res) => {
 
 // 404/405 Handler - place after all routes
 app.use((req, res) => {
+  console.warn(`[SERVER] 404 Not Found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ 
     message: "Endpoint not found", 
     suggestion: `Ensure you're using the correct path and method (${req.method}). Check the documentation.`

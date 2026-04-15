@@ -35,6 +35,7 @@ import useGetMyshop from "./hooks/useGetMyShop";
 import useGetShopByCity from "./hooks/useGetShopByCity";
 import useGetItemsByCity from "./hooks/useGetItemsByCity";
 import useGetMyOrders from "./hooks/useGetMyOrders";
+import useGetSettings from "./hooks/useGetSettings";
 
 import { setSocket } from "./redux/userSlice";
 import { serverUrl } from "./api";
@@ -73,6 +74,7 @@ function App() {
   useGetShopByCity();
   useGetItemsByCity();
   useGetMyOrders();
+  useGetSettings();
 
   // 🔌 Socket Connection
   useEffect(() => {

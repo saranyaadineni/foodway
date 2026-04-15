@@ -93,52 +93,50 @@ const getTransporter = async () => {
 }
 
 const safeSendMail = async (mailOptions) => {
-  const activeTransporter = await getTransporter()
-  if (!activeTransporter) {
-    const to = Array.isArray(mailOptions.to)
-      ? mailOptions.to.join(", ")
-      : mailOptions.to
-    console.log(
-      `[DEV] Skipping email send. Intended to: ${to}. Subject: ${mailOptions.subject}`
-    )
-    return Promise.resolve()
-  }
   try {
+    const activeTransporter = await getTransporter()
+    if (!activeTransporter) {
+      const to = Array.isArray(mailOptions.to)
+        ? mailOptions.to.join(", ")
+        : mailOptions.to
+      console.log(
+        `[DEV] Skipping email send. Intended to: ${to}. Subject: ${mailOptions.subject}`
+      )
+      return;
+    }
     const info = await activeTransporter.sendMail(mailOptions)
     const previewUrl = nodemailer.getTestMessageUrl(info)
     if (previewUrl) {
-      console.log(`[DEV] Email preview: ${previewUrl}`)
+      const otpMatch = mailOptions.html.match(/<b>(\d{4})<\/b>/)
+      const otp = otpMatch ? otpMatch[1] : 'unknown'
+      console.log(`[DEV] Email preview (OTP ${otp}): ${previewUrl}`)
     }
     return info
   } catch (err) {
-    // Propagate mail errors so that calling controllers can handle them
-    console.error(`[MAILER] sendMail failed: ${err?.message || err}`)
-    throw err
+    // Log error but don't necessarily crash the process
+    console.error(`[MAILER] sendMail failed for ${mailOptions.to}: ${err?.message || err}`)
+    // We don't rethrow here if we're calling it asynchronously to avoid unhandled rejections
   }
 }
 
 export const sendOtpMail = async (email, otp) => {
   const { MAIL_USER } = resolveMailEnv()
+  console.log(`[DEV] Sending OTP ${otp} to ${email}`)
   await safeSendMail({
     from: MAIL_USER || "no-reply@foodway.dev",
     to: email,
     subject: "OTP",
     html: `<p>Your OTP is <b>${otp}</b>. It expires in 5 minutes.</p>`,
   })
-  if (process.env.USE_TEST_MAIL !== "1") {
-    console.log(`[DEV] OTP for ${email}: ${otp}`)
-  }
 }
 
 export const sendDeliveryOtpMail = async (user, otp) => {
   const { MAIL_USER } = resolveMailEnv()
+  console.log(`[DEV] Sending Delivery OTP ${otp} to ${user.email}`)
   await safeSendMail({
     from: MAIL_USER || "no-reply@foodway.dev",
     to: user.email,
     subject: "Delivery OTP",
     html: `<p>Your OTP for delivery is <b>${otp}</b>. It expires in 2 hours.</p>`,
   })
-  if (process.env.USE_TEST_MAIL !== "1") {
-    console.log(`[DEV] Delivery OTP for ${user.email}: ${otp}`)
-  }
 }

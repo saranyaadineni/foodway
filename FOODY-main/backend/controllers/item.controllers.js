@@ -51,10 +51,16 @@ export const addItem = async (req, res) => {
             offerPercentage: offerPercentage ? Number(offerPercentage) : 0
         })
 
-        shop.items.push(item._id)
-        await shop.save()
-        await shop.populate("owner")
-        await shop.populate({
+        const shopUpdate = await Shop.findOneAndUpdate(
+            { owner: req.userId },
+            { $push: { items: item._id } },
+            { new: true }
+        )
+        if (!shopUpdate) {
+            return res.status(400).json({ message: "Shop not found. Please create a shop first." })
+        }
+        await shopUpdate.populate("owner")
+        await shopUpdate.populate({
             path: "items",
             options: { sort: { updatedAt: -1 } },
             populate: {
@@ -62,7 +68,7 @@ export const addItem = async (req, res) => {
                 select: "name image isOpen"
             }
         })
-        return res.status(201).json(shop)
+        return res.status(201).json(shopUpdate)
 
     } catch (error) {
         console.error('Add item error:', error)
@@ -156,11 +162,16 @@ export const deleteItem = async (req, res) => {
         const itemId = req.params.itemId
         const item = await Item.findByIdAndDelete(itemId)
         if (!item) {
-            return res.status(400).json({ message: "item not found" })
+            return res.status(404).json({ message: "Item not found" })
         }
-        const shop = await Shop.findOne({ owner: req.userId })
-        shop.items = shop.items.filter(i => i !== item._id)
-        await shop.save()
+        const shop = await Shop.findOneAndUpdate(
+            { owner: req.userId },
+            { $pull: { items: itemId } },
+            { new: true }
+        )
+        if (!shop) {
+            return res.status(404).json({ message: "Shop not found for this owner" })
+        }
         await shop.populate({
             path: "items",
             options: { sort: { updatedAt: -1 } },
@@ -172,7 +183,8 @@ export const deleteItem = async (req, res) => {
         return res.status(200).json(shop)
 
     } catch (error) {
-        return res.status(500).json({ message: `delete item error ${error}` })
+        console.error("Delete item error:", error);
+        return res.status(500).json({ message: `Delete item error: ${error.message}` })
     }
 }
 

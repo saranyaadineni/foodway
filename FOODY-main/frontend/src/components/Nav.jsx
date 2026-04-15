@@ -22,7 +22,6 @@ import { setAddress, setLocation } from "../redux/mapSlice";
 function Nav() {
   const { userData, currentCity, currentAddress, cartItems, socket, newOrdersCount } = useSelector((state) => state.user);
   const { myShopData } = useSelector((state) => state.owner);
-  const [showInfo, setShowInfo] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [locationInput, setLocationInput] = useState("");
   const [recentLocations, setRecentLocations] = useState([]);
@@ -31,23 +30,9 @@ function Nav() {
   const [locationResults, setLocationResults] = useState([]);
   const [locationResultsLoading, setLocationResultsLoading] = useState(false);
 
-  const profileRef = useRef(null);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setShowInfo(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const isUser = userData?.role === "user";
   const isOwner = userData?.role === "owner";
@@ -188,105 +173,134 @@ function Nav() {
     }
   }, [userData?.role, socket, location.pathname, dispatch]);
 
-  const handleLogOut = async () => {
+  const handleLogOut = async (setShowInfo) => {
     try {
+      if (setShowInfo) setShowInfo(false);
       await userAPI.setActive(false);
       await authAPI.signout();
     } catch (error) {
-      console.log("Signout error:", error);
+      console.error("Signout error:", error);
     } finally {
       dispatch(logout());
       navigate("/signin");
     }
   };
 
-  const ProfileDropdown = () => (
-    <div className="absolute top-[55px] right-0 bg-white shadow-2xl border border-gray-100 rounded-2xl p-2 flex flex-col gap-1 w-[220px] animate-fade-in z-[10000]">
-      <div className="px-4 py-3 mb-1 border-b border-gray-50">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Logged in as</p>
-        <p className="font-bold text-gray-800 truncate">{userData.fullName}</p>
-        <p className="text-[10px] font-semibold text-[#fc8019] mt-0.5 px-2 py-0.5 bg-orange-50 rounded-full inline-block">
-          {userData.role === 'deliveryBoy' ? 'Delivery Boy' : userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
-        </p>
-      </div>
+  const UserProfile = () => {
+    const [showInfo, setShowInfo] = useState(false);
+    const profileRef = useRef(null);
 
-      {userData.role === "user" && (
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (profileRef.current && !profileRef.current.contains(event.target)) {
+          setShowInfo(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, []);
+
+    return (
+      <div className="relative" ref={profileRef}>
         <div
-          onClick={() => {
-            navigate("/my-orders");
-            setShowInfo(false);
-          }}
-          className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
+          className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
+          onClick={() => setShowInfo((prev) => !prev)}
         >
-          <TbReceipt2 size={18} className="text-gray-400" />
-          My Orders
+          <div className="w-[35px] h-[35px] sm:w-[40px] sm:h-[40px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md border-2 border-white">
+            {userData?.fullName?.slice(0, 1).toUpperCase()}
+          </div>
+          <span className="hidden sm:inline font-bold text-gray-800 tracking-tight">
+            {userData?.fullName?.split(" ")[0]}
+          </span>
         </div>
-      )}
+        
+        {showInfo && (
+          <div className="absolute top-[55px] right-0 bg-white shadow-2xl border border-gray-100 rounded-2xl p-2 flex flex-col gap-1 w-[220px] animate-fade-in z-[10000]">
+            <div className="px-4 py-3 mb-1 border-b border-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Logged in as</p>
+              <p className="font-bold text-gray-800 truncate">{userData.fullName}</p>
+              <p className="text-[10px] font-semibold text-[#fc8019] mt-0.5 px-2 py-0.5 bg-orange-50 rounded-full inline-block">
+                {userData.role === 'deliveryBoy' ? 'Delivery Boy' : userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+              </p>
+            </div>
 
-      {userData.role === "owner" && (
-        <>
-          <div
-            onClick={() => {
-              dispatch(setActiveTab('dashboard'));
-              navigate("/");
-              setShowInfo(false);
-            }}
-            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
-          >
-            <FaStore size={18} className="text-gray-400" />
-            Dashboard
-          </div>
-          <div
-            onClick={() => {
-              dispatch(setActiveTab('menu'));
-              navigate("/");
-              setShowInfo(false);
-            }}
-            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
-          >
-            <FaUtensils size={18} className="text-gray-400" />
-            Menu Items
-          </div>
-          <div
-            onClick={() => {
-              dispatch(setActiveTab('categories'));
-              navigate("/");
-              setShowInfo(false);
-            }}
-            className="px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl"
-          >
-            <FaList size={18} className="text-gray-400" />
-            Categories
-          </div>
-        </>
-      )}
+            {userData.role === "user" && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowInfo(false);
+                  navigate("/my-orders");
+                }}
+                className="w-full text-left px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl focus:outline-none"
+              >
+                <TbReceipt2 size={18} className="text-gray-400" />
+                My Orders
+              </button>
+            )}
 
-      <div
-        onClick={handleLogOut}
-        className="px-4 py-2.5 text-red-500 font-semibold cursor-pointer hover:bg-red-50 transition-all text-sm flex items-center gap-3 mt-1 border-t border-gray-50 pt-3 rounded-xl"
-      >
-        <FiUser size={18} />
-        Log Out
+            {userData.role === "owner" && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowInfo(false);
+                    dispatch(setActiveTab('dashboard'));
+                    navigate("/");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl focus:outline-none"
+                >
+                  <FaStore size={18} className="text-gray-400" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowInfo(false);
+                    dispatch(setActiveTab('menu'));
+                    navigate("/");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl focus:outline-none"
+                >
+                  <FaUtensils size={18} className="text-gray-400" />
+                  Menu Items
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowInfo(false);
+                    dispatch(setActiveTab('categories'));
+                    navigate("/");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50 hover:text-[#fc8019] transition-all text-sm flex items-center gap-3 rounded-xl focus:outline-none"
+                >
+                  <FaList size={18} className="text-gray-400" />
+                  Categories
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleLogOut(setShowInfo);
+              }}
+              className="w-full text-left px-4 py-2.5 text-red-500 font-semibold cursor-pointer hover:bg-red-50 transition-all text-sm flex items-center gap-3 mt-1 border-t border-gray-50 pt-3 rounded-xl focus:outline-none"
+            >
+              <FiUser size={18} />
+              Log Out
+            </button>
+          </div>
+        )}
       </div>
-    </div>
-  );
-
-  const UserProfile = () => (
-    <div className="relative" ref={profileRef}>
-      <div
-        className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors"
-        onClick={() => setShowInfo((prev) => !prev)}
-      >
-        <div className="w-[35px] h-[35px] sm:w-[40px] sm:h-[40px] rounded-full bg-gradient-to-r from-[#fc8019] to-[#ff2b85] text-white font-semibold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md border-2 border-white">
-          {userData?.fullName?.slice(0, 1).toUpperCase()}
-        </div>
-        <span className="hidden sm:inline font-bold text-gray-800 tracking-tight">
-          {userData?.fullName?.split(" ")[0]}
-        </span>
-      </div>
-      {showInfo && <ProfileDropdown />}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="fixed top-0 left-0 w-full h-[70px] bg-white border-b border-gray-200 shadow-sm z-[9999] flex items-center justify-between px-4 sm:px-8 transition-all">

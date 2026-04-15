@@ -6,7 +6,8 @@ import FoodCard from "../components/FoodCard";
 import { HiOutlineReceiptPercent } from "react-icons/hi2";
 
 function Offers() {
-  const { currentCity } = useSelector((state) => state.user);
+  const { currentCity, userData } = useSelector((state) => state.user);
+  const { myShopData } = useSelector((state) => state.owner);
   const [offerItems, setOfferItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -15,7 +16,17 @@ function Offers() {
       setIsLoading(true);
       try {
         const response = await itemAPI.getOffers(currentCity || "all");
-        setOfferItems(Array.isArray(response.data) ? response.data : []);
+        let items = Array.isArray(response.data) ? response.data : [];
+        
+        // Filter for owner if logged in as owner
+        if (userData?.role === 'owner' && myShopData?._id) {
+          items = items.filter(item => {
+            const itemShopId = item.shop?._id || item.shop;
+            return String(itemShopId) === String(myShopData._id);
+          });
+        }
+        
+        setOfferItems(items);
       } catch (error) {
         console.error("Failed to fetch offers:", error);
       } finally {
@@ -24,7 +35,7 @@ function Offers() {
     };
 
     fetchOffers();
-  }, [currentCity]);
+  }, [currentCity, userData, myShopData]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-[100px]">

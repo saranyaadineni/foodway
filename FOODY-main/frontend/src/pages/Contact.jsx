@@ -7,12 +7,53 @@ const Contact = () => {
   const { contactContent } = useSelector((state) => state.user);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState({ name: "", email: "", message: "" });
+
+  const validate = () => {
+    let newErrors = { name: "", email: "", message: "" };
+    let isValid = true;
+
+    // Name validation: Only letters and spaces, at least 2 characters
+    const nameRegex = /^[A-Za-z\s]{2,}$/;
+    if (!formData.name.trim()) {
+      newErrors.name = "Full Name is required";
+      isValid = false;
+    } else if (!nameRegex.test(formData.name)) {
+      newErrors.name = "Full Name must contain only letters and spaces (min 2 chars)";
+      isValid = false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email Address is required";
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = "Your Message is required";
+      isValid = false;
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters long";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 5000);
-    setFormData({ name: "", email: "", message: "" });
+    if (validate()) {
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 5000);
+      setFormData({ name: "", email: "", message: "" });
+      setErrors({ name: "", email: "", message: "" });
+    }
   };
 
   return (
@@ -94,7 +135,7 @@ const Contact = () => {
           <div className="lg:col-span-7 bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-orange-50 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -z-0 opacity-50"></div>
             
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10" noValidate>
               <h2 className="text-3xl font-extrabold text-gray-900 mb-8">Send us a Message</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -102,23 +143,29 @@ const Contact = () => {
                   <label className="text-sm font-bold text-gray-600 ml-1">Full Name</label>
                   <input 
                     type="text" 
-                    required
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, name: e.target.value});
+                      if (errors.name) setErrors({...errors, name: ""});
+                    }}
                     placeholder="John Doe"
-                    className="w-full px-5 py-3 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-[#fc8019] outline-none transition-all shadow-inner"
+                    className={`w-full px-5 py-3 rounded-2xl bg-gray-50 border ${errors.name ? 'border-red-500' : 'border-transparent'} focus:bg-white focus:border-[#fc8019] outline-none transition-all shadow-inner`}
                   />
+                  {errors.name && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.name}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-600 ml-1">Email Address</label>
                   <input 
                     type="email" 
-                    required
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, email: e.target.value});
+                      if (errors.email) setErrors({...errors, email: ""});
+                    }}
                     placeholder="john@example.com"
-                    className="w-full px-5 py-3 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-[#ff2b85] outline-none transition-all shadow-inner"
+                    className={`w-full px-5 py-3 rounded-2xl bg-gray-50 border ${errors.email ? 'border-red-500' : 'border-transparent'} focus:bg-white focus:border-[#ff2b85] outline-none transition-all shadow-inner`}
                   />
+                  {errors.email && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>}
                 </div>
               </div>
 
@@ -126,12 +173,15 @@ const Contact = () => {
                 <label className="text-sm font-bold text-gray-600 ml-1">Your Message</label>
                 <textarea 
                   rows="5" 
-                  required
                   value={formData.message}
-                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, message: e.target.value});
+                    if (errors.message) setErrors({...errors, message: ""});
+                  }}
                   placeholder="How can we help you?"
-                  className="w-full px-5 py-3 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-[#fc8019] outline-none transition-all shadow-inner resize-none"
+                  className={`w-full px-5 py-3 rounded-2xl bg-gray-50 border ${errors.message ? 'border-red-500' : 'border-transparent'} focus:bg-white focus:border-[#fc8019] outline-none transition-all shadow-inner resize-none`}
                 ></textarea>
+                {errors.message && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.message}</p>}
               </div>
 
               <button 

@@ -20,7 +20,7 @@ if (!API_URL) {
 const api = axios.create({
   baseURL: API_URL, // ⚠️ must NOT end with /api
   withCredentials: true,
-  timeout: 30000,
+  timeout: 120000, // Increased to 120s for slow backend (e.g., Render free tier)
 });
 
 /* =======================
@@ -333,6 +333,12 @@ export const superAdminAPI = {
 
   deleteUserType: (userTypeId) =>
     api.delete(`/api/superadmin/delete-user-type/${userTypeId}`),
+
+  getSettings: () =>
+    api.get("/api/superadmin/settings"),
+
+  updateSettings: (data) =>
+    api.post("/api/superadmin/settings", data),
 };
 
 export default api;

@@ -283,9 +283,10 @@ function SignUp() {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-2.5 text-gray-500 hover:text-[#ff2b85] transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#ff2b85] transition-all duration-200 focus:outline-none"
+              title={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+              {showPassword ? <FaRegEye size={20} /> : <FaRegEyeSlash size={20} />}
             </button>
           </div>
           {fieldErrors.password && (

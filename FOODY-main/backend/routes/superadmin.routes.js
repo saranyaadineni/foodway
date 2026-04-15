@@ -13,7 +13,9 @@ import {
     getUserTypes,
     createUserType,
     updateUserTypeDelivery,
-    deleteUserType
+    deleteUserType,
+    getSettings,
+    updateSettings
 } from "../controllers/superadmin.controllers.js";
 import isAuth from "../middlewares/isAuth.js";
 import { upload } from "../middlewares/multer.js";
@@ -27,6 +29,10 @@ const isSuperAdmin = (req, res, next) => {
     }
     next();
 };
+
+// Global Settings management routes
+router.get("/settings", getSettings);
+router.post("/settings", isAuth, isSuperAdmin, updateSettings);
 
 // Owner management routes
 router.get("/pending-owners", isAuth, isSuperAdmin, getPendingOwners);
@@ -60,5 +66,15 @@ router.put("/user-types/:userTypeId/delivery", isAuth, isSuperAdmin, updateUserT
 router.post("/update-user-type-delivery/:userTypeId", isAuth, isSuperAdmin, updateUserTypeDelivery);
 router.delete("/user-types/:userTypeId", isAuth, isSuperAdmin, deleteUserType);
 router.delete("/delete-user-type/:userTypeId", isAuth, isSuperAdmin, deleteUserType);
+
+// Fallback for unmatched superadmin routes
+router.use((req, res) => {
+    console.warn(`[SUPERADMIN] Unmatched route: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ 
+        message: "Superadmin endpoint not found",
+        path: req.originalUrl,
+        method: req.method
+    });
+});
 
 export default router;

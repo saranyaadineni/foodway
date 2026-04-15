@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
+import { IoIosArrowRoundBack, IoMdAdd, IoMdRemove } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { FaStore } from "react-icons/fa";
+import { FaStore, FaTimes } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { setMyShopData } from "../redux/ownerSlice";
 import { shopAPI, getImageUrl } from "../api";
@@ -25,6 +25,23 @@ function CreateEditShop() {
   const [upiPayeeName, setUpiPayeeName] = useState(myShopData?.upiPayeeName || "");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+
+  const toggleZoomModal = () => {
+    setShowZoomModal(!showZoomModal);
+    setZoomScale(1);
+  };
+
+  const handleZoomIn = (e) => {
+    e.stopPropagation();
+    setZoomScale(prev => Math.min(prev + 0.2, 3));
+  };
+
+  const handleZoomOut = (e) => {
+    e.stopPropagation();
+    setZoomScale(prev => Math.max(prev - 0.2, 0.5));
+  };
 
   const validateField = (fieldName, value, existingErrors = null) => {
     let errors = existingErrors ? { ...existingErrors } : { ...fieldErrors };
@@ -232,7 +249,7 @@ function CreateEditShop() {
               <p className="text-red-500 text-[10px] font-bold ml-1 mt-1 uppercase">{fieldErrors.image}</p>
             )}
             {frontendImage && (
-              <div className="mt-4 animate-fade-in relative group">
+              <div className="mt-4 animate-fade-in relative group cursor-zoom-in" onClick={toggleZoomModal}>
                 <img
                   src={frontendImage}
                   alt="Shop Preview"
@@ -241,18 +258,69 @@ function CreateEditShop() {
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
                     type="button"
-                    onClick={removeImage}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeImage();
+                    }}
                     className="bg-red-500/80 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md transition-all"
                   >
                     Remove
                   </button>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <p className="bg-black/50 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md">Preview</p>
+                  <p className="bg-black/50 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md">Click to Zoom</p>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Zoom Modal */}
+          {showZoomModal && (
+            <div 
+              className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
+              onClick={toggleZoomModal}
+            >
+              <div className="absolute top-6 right-6 flex items-center gap-4 z-10">
+                <div className="flex items-center gap-2 bg-white/10 rounded-full p-1 border border-white/20 backdrop-blur-md">
+                  <button 
+                    onClick={handleZoomOut}
+                    className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"
+                    title="Zoom Out"
+                  >
+                    <IoMdRemove size={24} />
+                  </button>
+                  <span className="text-white font-bold text-sm w-12 text-center">
+                    {Math.round(zoomScale * 100)}%
+                  </span>
+                  <button 
+                    onClick={handleZoomIn}
+                    className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"
+                    title="Zoom In"
+                  >
+                    <IoMdAdd size={24} />
+                  </button>
+                </div>
+                <button 
+                  onClick={toggleZoomModal}
+                  className="bg-white/10 hover:bg-red-500 p-2 rounded-full text-white transition-all border border-white/20 backdrop-blur-md"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+              
+              <div 
+                className="relative overflow-hidden w-full h-full flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={frontendImage}
+                  alt="Shop Zoomed"
+                  style={{ transform: `scale(${zoomScale})` }}
+                  className="max-w-full max-h-full object-contain transition-transform duration-200 shadow-2xl"
+                />
+              </div>
+            </div>
+          )}
 
           {/* UPI Section */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setMyShopData } from '../redux/ownerSlice';
 import { itemAPI, shopAPI, getImageUrl } from '../api';
-function OwnerItemCard({data}) {
+function OwnerItemCard({data, showMessage}) {
     const navigate=useNavigate()
     const dispatch=useDispatch()
     const [stockStatus, setStockStatus] = useState(data.stockStatus || 'in_stock')
@@ -17,12 +17,12 @@ function OwnerItemCard({data}) {
           const result = await itemAPI.deleteItem(data._id)
           dispatch(setMyShopData(result.data))
           if (showMessage) {
-            showMessage("Item deleted successfully", "success");
+            showMessage("Item Deleted Successfully", "success");
           }
         } catch (error) {
           console.log(error)
           if (showMessage) {
-            showMessage("Failed to delete item", "error");
+            showMessage("Failed to Delete Item", "error");
           }
         }
       }
@@ -67,15 +67,15 @@ function OwnerItemCard({data}) {
       </div>
       <div className='flex flex-col justify-between p-3 flex-1'>
           <div>
-<h2 className='text-base font-semibold text-[#ff4d2d] flex items-center gap-2'>
+<h2 className='text-lg font-bold text-[#ff4d2d] flex items-center gap-2'>
   {data.name}
-  <span className='inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200'>
+  <span className='inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200'>
     ★ {Number(data?.rating?.average || 0).toFixed(1)}
     <span className='text-[10px] text-gray-500 ml-1'>({data?.rating?.count || 0})</span>
   </span>
 </h2>
-<p><span className='font-medium text-gray-70'>Category:</span> {data.category}</p>
-<p><span className='font-medium text-gray-70'>Food Type:</span> {data.foodType}</p>
+<p className='text-sm text-gray-600'><span className='font-bold text-gray-800'>Category:</span> {data.category.charAt(0).toUpperCase() + data.category.slice(1)}</p>
+<p className='text-sm text-gray-600'><span className='font-bold text-gray-800'>Food Type:</span> {data.foodType.charAt(0).toUpperCase() + data.foodType.slice(1)}</p>
 {data.hasOffer && (
   <p className='mt-1'>
     <span className='font-medium text-gray-70'>Offer:</span> 

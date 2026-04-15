@@ -182,18 +182,15 @@ export const sendOtp=async (req,res) => {
     
     console.log(`[AUTH] Generated OTP for ${email}: ${otp}`)
     
-    try {
-      await sendOtpMail(email, otp)
-      console.log(`[AUTH] OTP email sent successfully to ${email}`)
-      return res.status(200).json({message: "OTP sent successfully to your email"})
-    } catch (emailError) {
-      console.error(`[AUTH] Failed to send OTP email to ${email}:`, emailError)
-      // Still return success but with a note about email delivery
-      return res.status(200).json({
-        message: "OTP generated successfully. If you don't receive the email, please check your spam folder or try again.",
-        warning: "Email delivery may be delayed"
-      })
-    }
+    // Send OTP email asynchronously to avoid frontend timeout
+    sendOtpMail(email, otp)
+      .then(() => console.log(`[AUTH] OTP email sent successfully to ${email}`))
+      .catch((emailError) => console.error(`[AUTH] Failed to send OTP email to ${email}:`, emailError));
+
+    return res.status(200).json({
+      message: "OTP generated successfully. Please check your email (including spam folder).",
+      warning: "Email delivery may take a moment"
+    });
   } catch (error) {
      console.error('[AUTH] Send OTP error:', error)
      return res.status(500).json({message: `Send OTP error: ${error.message}`})

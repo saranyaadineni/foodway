@@ -1,7 +1,46 @@
 import User from "../models/user.model.js";
 import Category from "../models/category.model.js";
 import UserType from "../models/userType.model.js";
+import Settings from "../models/settings.model.js";
 import uploadToCloudinary from "../utils/s3Upload.js";
+
+// Get settings
+export const getSettings = async (req, res) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            // Create default settings if not found
+            settings = await Settings.create({});
+        }
+        res.status(200).json(settings);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching settings: ${error}` });
+    }
+};
+
+// Update settings
+export const updateSettings = async (req, res) => {
+    try {
+        const { aboutContent, contactContent } = req.body;
+        
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = new Settings();
+        }
+
+        if (aboutContent) {
+            settings.aboutContent = { ...settings.aboutContent, ...aboutContent };
+        }
+        if (contactContent) {
+            settings.contactContent = { ...settings.contactContent, ...contactContent };
+        }
+
+        await settings.save();
+        res.status(200).json(settings);
+    } catch (error) {
+        res.status(500).json({ message: `Error updating settings: ${error}` });
+    }
+};
 
 // Get all pending owners for approval
 export const getPendingOwners = async (req, res) => {

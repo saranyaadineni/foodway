@@ -435,7 +435,9 @@ function CartPage() {
                         />
                         <div>
                             <h3 className="font-bold text-[#282c3f] text-sm">{shopDetails?.name || "Restaurant"}</h3>
-                            <p className="text-xs text-[#7e808c]">{shopDetails?.address || "Location"}</p>
+                            <p className="text-xs text-[#7e808c]">
+                                {shopDetails?.address ? `${shopDetails.address}, ${shopDetails.city}` : "Location"}
+                            </p>
                             <div className="w-10 h-1 bg-[#282c3f] mt-2"></div>
                         </div>
                     </div>

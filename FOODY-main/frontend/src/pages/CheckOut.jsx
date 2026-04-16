@@ -17,7 +17,11 @@ function CheckOut() {
   const [orderType, setOrderType] = useState("delivery") // delivery or pickup
   const [activeTab, setActiveTab] = useState("delivery"); // delivery, payment
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [modalAddress, setModalAddress] = useState("")
+  const [modalAddressError, setModalAddressError] = useState("")
   const [copySuccess, setCopySuccess] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("")
+  const [copyError, setCopyError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -37,24 +41,28 @@ function CheckOut() {
   const tax = round2(itemsTotal * 0.02)
   const grandTotal = round2(itemsTotal + deliveryFee + platformFee + tax)
 
-  // Fetch shop UPI details (assumes single-shop cart; uses first item's shop)
+  // Fetch shop details (assumes single-shop cart; uses first item's shop)
+  const [shopDetails, setShopDetails] = useState(null)
   const [shopUpi, setShopUpi] = useState({ vpa: null, payeeName: null })
   useEffect(() => {
-    const fetchShopUpi = async () => {
+    const fetchShopInfo = async () => {
       try {
         const firstItemShop = cartItems?.[0]?.shop
         const shopId = typeof firstItemShop === 'string' ? firstItemShop : firstItemShop?._id
         if (!shopId) return
         const res = await itemAPI.getByShop(shopId)
         const shop = res.data?.shop
-        if (shop?.upiVpa) {
-          setShopUpi({ vpa: shop.upiVpa, payeeName: shop.upiPayeeName || null })
+        if (shop) {
+          setShopDetails(shop)
+          if (shop.upiVpa) {
+            setShopUpi({ vpa: shop.upiVpa, payeeName: shop.upiPayeeName || null })
+          }
         }
       } catch (error) {
-        console.log('fetch shop UPI error', error)
+        console.log('fetch shop info error', error)
       }
     }
-    fetchShopUpi()
+    fetchShopInfo()
   }, [cartItems])
 
   // UPI deep link with auto amount for online payments (from shop settings)
@@ -81,12 +89,40 @@ function CheckOut() {
     }
   };
 
-  const handleCopyUpiLink = () => {
-    if (upiLink && navigator.clipboard) {
-      navigator.clipboard.writeText(upiLink).then(() => {
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000); // Hide message after 2 seconds
-      });
+  const handleCopyUpiLink = async () => {
+    setCopyError("")
+    setCopyMessage("")
+    if (!upiLink) {
+      setCopyError("UPI is not configured for this restaurant.")
+      return
+    }
+
+    const textToCopy = upiLink
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = textToCopy
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'absolute'
+        textarea.style.left = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(textarea)
+        if (!ok) throw new Error('copy failed')
+      }
+
+      setCopySuccess(true)
+      setCopyMessage("UPI link copied to clipboard successfully.")
+      setTimeout(() => {
+        setCopySuccess(false)
+        setCopyMessage("")
+      }, 2000)
+    } catch (e) {
+      setCopyError("Copy failed. Please try again or copy manually.")
     }
   };
 
@@ -104,7 +140,14 @@ function CheckOut() {
   }, [showAddressForm]);
 
   const handleSaveAddress = (newAddress) => {
-    setAddressInput(newAddress);
+    const trimmed = (newAddress || "").trim()
+    if (!trimmed) {
+      setModalAddressError("Please enter a delivery address")
+      return
+    }
+    setAddressInput(trimmed);
+    setFieldErrors(prev => ({ ...prev, address: null }))
+    setModalAddressError("")
     setShowAddressForm(false);
     if (window.history.state?.modal) {
       window.history.back();
@@ -112,6 +155,7 @@ function CheckOut() {
   };
 
   const handleCancelAddress = () => {
+    setModalAddressError("")
     setShowAddressForm(false);
     if (window.history.state?.modal) {
       window.history.back();
@@ -223,9 +267,9 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
 
 
   return (
-    <div className='min-h-screen bg-[#fff9f6] flex items-center justify-center p-6'>
-      <div className=' absolute top-[20px] left-[20px] z-[10]' onClick={() => navigate("/")}>
-        <IoIosArrowRoundBack size={35} className='text-[#ff4d2d]' />
+    <div className='min-h-screen bg-[#fff9f6] flex items-center justify-center p-6 relative'>
+      <div className=' absolute top-[20px] left-[20px] z-[10]' onClick={() => navigate("/cart")}>
+        <IoIosArrowRoundBack size={35} className='text-[#ff4d2d] cursor-pointer' />
       </div>
       <div className='w-full max-w-[900px] bg-white rounded-2xl shadow-xl p-6 space-y-6'>
         <h1 className='text-2xl font-bold text-gray-800'>Checkout</h1>
@@ -293,13 +337,23 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
                     <div className='space-y-3'>
                       <input
                         type="text"
-                        className='w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]'
+                        className={`w-full border ${fieldErrors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]`}
                         placeholder='Enter your complete delivery address'
                         value={addressInput}
-                        onChange={(e) => setAddressInput(e.target.value)}
+                        onChange={(e) => {
+                          setAddressInput(e.target.value)
+                          if (fieldErrors.address) {
+                            setFieldErrors(prev => ({ ...prev, address: null }))
+                          }
+                        }}
                       />
+                      {fieldErrors.address && <p className="text-red-500 text-xs">{fieldErrors.address}</p>}
                       <button
-                        onClick={() => setShowAddressForm(true)}
+                        onClick={() => {
+                          setModalAddress(addressInput)
+                          setModalAddressError("")
+                          setShowAddressForm(true)
+                        }}
                         className="text-sm text-[#ff4d2d] font-semibold hover:underline"
                       >
                         + Add New Address
@@ -371,13 +425,38 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
                     <div className="mt-4 p-4 border rounded-lg bg-blue-50">
                       <p className="text-sm font-semibold text-blue-800">Pay via UPI</p>
                       <p className="text-xs text-blue-600 mb-3">You can use any UPI app to pay.</p>
-                      <button
-                        onClick={handleCopyUpiLink}
-                        disabled={!upiLink}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-sm disabled:bg-gray-400"
-                      >
-                        {copySuccess ? "Link Copied!" : "Copy UPI Link"}
-                      </button>
+                      {upiLink ? (
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="bg-white rounded-lg border border-blue-200 p-3 flex items-center justify-center">
+                            <img
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}`}
+                              alt="UPI QR Code"
+                              className="w-40 h-40 object-contain"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <button
+                              onClick={handleCopyUpiLink}
+                              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-blue-700"
+                              type="button"
+                            >
+                              {copySuccess ? "Link Copied!" : "Copy UPI Link"}
+                            </button>
+                            {copyMessage && (
+                              <p className="text-xs text-green-700 mt-2 font-semibold">{copyMessage}</p>
+                            )}
+                            {copyError && (
+                              <p className="text-xs text-red-600 mt-2 font-semibold">{copyError}</p>
+                            )}
+                            <div className="mt-3 bg-white border border-blue-200 rounded-lg p-2">
+                              <p className="text-[10px] text-gray-500 break-all">{upiLink}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-red-600 font-semibold">{copyError || "UPI is not configured for this restaurant."}</p>
+                      )}
                     </div>
                   )}
                 </section>
@@ -390,7 +469,12 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
             <section>
               <h2 class="text-lg font-semibold mb-3 text-gray-800">Order Summary</h2>
               <div class="rounded-xl border bg-gray-50 p-4 space-y-2">
-                <div class="font-semibold text-gray-800">{cartItems[0]?.shop?.name || 'Your Restaurant'}</div>
+                <div>
+                    <div class="font-semibold text-gray-800">{shopDetails?.name || cartItems[0]?.shop?.name || 'Your Restaurant'}</div>
+                    <div class="text-xs text-gray-500">
+                        {shopDetails?.address ? `${shopDetails.address}, ${shopDetails.city}` : "Location"}
+                    </div>
+                </div>
                 {cartItems.map((item, index) => (
                   <div key={index} class="flex justify-between text-sm text-gray-700">
                     <span>{item.name} x {item.quantity}</span>
@@ -422,13 +506,15 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
                 </div>
               </div>
             </section>
-            <button
-              className="w-full mt-6 bg-[#ff4d2d] hover:bg-[#e64526] text-white py-3 rounded-xl font-semibold disabled:bg-gray-300 flex items-center justify-center"
-              onClick={handlePlaceOrder}
-              disabled={loading || verifyingPayment || (orderType === 'delivery' && !addressInput.trim()) || !phoneNumber.trim()}
-            >
-              {loading ? 'Placing Order...' : verifyingPayment ? 'Verifying Payment...' : 'Continue'}
-            </button>
+            {activeTab === "payment" && (
+              <button
+                className="w-full mt-6 bg-[#ff4d2d] hover:bg-[#e64526] text-white py-3 rounded-xl font-semibold disabled:bg-gray-300 flex items-center justify-center"
+                onClick={handlePlaceOrder}
+                disabled={loading || verifyingPayment || (orderType === 'delivery' && !addressInput.trim()) || !phoneNumber.trim()}
+              >
+                {loading ? 'Placing Order...' : verifyingPayment ? 'Verifying Payment...' : 'Continue'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -438,11 +524,16 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
               <h2 className="text-lg font-semibold mb-4">Add New Address</h2>
               <textarea
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
+                className={`w-full border ${modalAddressError ? 'border-red-500' : 'border-gray-300'} rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]`}
                 rows="4"
                 placeholder="Enter your full address"
-                onChange={(e) => setAddressInput(e.target.value)}
+                value={modalAddress}
+                onChange={(e) => {
+                  setModalAddress(e.target.value)
+                  if (modalAddressError) setModalAddressError("")
+                }}
               ></textarea>
+              {modalAddressError && <p className="text-red-500 text-xs mt-2">{modalAddressError}</p>}
               <div className="flex justify-end gap-4 mt-4">
                 <button
                   onClick={handleCancelAddress}
@@ -451,7 +542,7 @@ const openRazorpayWindow=(orderId,razorOrder)=>{
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleSaveAddress(addressInput)}
+                  onClick={() => handleSaveAddress(modalAddress)}
                   className="bg-[#ff4d2d] text-white px-4 py-2 rounded-lg text-sm font-semibold"
                 >
                   Save Address

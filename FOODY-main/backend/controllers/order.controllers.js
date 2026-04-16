@@ -414,13 +414,17 @@ export const getMyOrders = async (req, res) => {
                     return null
                 }
                 
-                console.log('Found matching shop order for order:', order._id, 'subtotal:', ownerShopOrder.subtotal)
+                // Remove sensitive OTP data for owners
+                const sanitizedShopOrder = ownerShopOrder.toObject()
+                delete sanitizedShopOrder.deliveryOtp
+                delete sanitizedShopOrder.otpExpires
+                delete sanitizedShopOrder.lastOtpGeneratedAt
                 
                 return {
                     _id: order._id,
                     paymentMethod: order.paymentMethod,
                     user: order.user,
-                    shopOrders: ownerShopOrder,
+                    shopOrders: sanitizedShopOrder,
                     createdAt: order.createdAt,
                     deliveryAddress: order.deliveryAddress,
                     payment: order.payment,
@@ -446,11 +450,17 @@ export const getMyOrders = async (req, res) => {
                 )
                 if (!deliveryBoyShopOrder) return null
                 
+                // Remove sensitive OTP data for delivery boys
+                const sanitizedShopOrder = deliveryBoyShopOrder.toObject()
+                delete sanitizedShopOrder.deliveryOtp
+                delete sanitizedShopOrder.otpExpires
+                delete sanitizedShopOrder.lastOtpGeneratedAt
+                
                 return {
                     _id: order._id,
                     paymentMethod: order.paymentMethod,
                     user: order.user,
-                    shopOrders: deliveryBoyShopOrder,
+                    shopOrders: sanitizedShopOrder,
                     createdAt: order.createdAt,
                     deliveryAddress: order.deliveryAddress,
                     payment: order.payment,
@@ -613,7 +623,8 @@ export const updateOrderStatus = async (req, res) => {
                 shopOrder.deliveryOtp = otp
                 shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes expiration
                 shopOrder.lastOtpGeneratedAt = new Date()
-                console.log(`[STATUS_UPDATE] Generated OTP ${otp} for Order ${orderId}, ShopOrder ${shopOrder._id}`);
+                shopOrder.otpAttempts = 0 // Reset attempts when new OTP is generated
+                console.log(`[STATUS_UPDATE] Generated OTP for Order ${orderId}, ShopOrder ${shopOrder._id}`);
                 // Populate user to get email for sending OTP
                 await order.populate("user", "fullName email socketId")
                 // Send OTP mail (safe and non-throwing)
@@ -671,9 +682,8 @@ export const updateOrderStatus = async (req, res) => {
                     io.to(boy.socketId).emit('update-status', {
                         orderId: order._id,
                         shopId: updatedShopOrder.shop._id,
-                        status: updatedShopOrder.status,
-                        deliveryOtp: updatedShopOrder.deliveryOtp || null,
-                        otpExpires: updatedShopOrder.otpExpires || null
+                        status: updatedShopOrder.status
+                        // DO NOT send OTP to delivery boy
                     })
                 }
             }
@@ -917,9 +927,7 @@ export const getCurrentOrders = async (req, res) => {
                 payment: assignment.order.payment,
                 deliveryAddress: assignment.order.deliveryAddress,
                 deliveryBoyLocation,
-                customerLocation,
-                deliveryOtp: shopOrder.deliveryOtp,
-                otpExpires: shopOrder.otpExpires
+                customerLocation
             }
         }).filter(Boolean)
 
@@ -951,6 +959,16 @@ export const getOrderById = async (req, res) => {
         if (!order) {
             return res.status(400).json({ message: "order not found" })
         }
+
+        // If not the customer, remove OTP data
+        if (String(order.user._id) !== String(req.userId)) {
+            order.shopOrders.forEach(so => {
+                delete so.deliveryOtp
+                delete so.otpExpires
+                delete so.lastOtpGeneratedAt
+            })
+        }
+
         return res.status(200).json(order)
     } catch (error) {
         return res.status(500).json({ message: `get by id order error ${error}` })
@@ -982,7 +1000,6 @@ export const sendDeliveryOtp = async (req, res) => {
             await sendDeliveryOtpMail(order.user, shopOrder.deliveryOtp)
             return res.status(200).json({ 
                 message: `Existing OTP resent to ${order?.user?.fullName}`,
-                otp: shopOrder.deliveryOtp,
                 isExisting: true
             })
         }
@@ -992,7 +1009,8 @@ export const sendDeliveryOtp = async (req, res) => {
         shopOrder.deliveryOtp = otp
         shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes expiration
         shopOrder.lastOtpGeneratedAt = new Date()
-        console.log(`[OTP_GENERATE] Generated new OTP ${otp} for Order ${orderId}, ShopOrder ${shopOrderId}`);
+        shopOrder.otpAttempts = 0 // Reset attempts when new OTP is generated
+        console.log(`[OTP_GENERATE] Generated new OTP for Order ${orderId}, ShopOrder ${shopOrderId}`);
         
         order.markModified('shopOrders')
         await order.save()
@@ -1016,7 +1034,6 @@ export const sendDeliveryOtp = async (req, res) => {
 
         return res.status(200).json({ 
             message: `New OTP sent to ${order?.user?.fullName}`,
-            otp: otp,
             isExisting: false
         })
     } catch (error) {
@@ -1051,16 +1068,36 @@ export const verifyDeliveryOtp = async (req, res) => {
         const inputOtp = String(otp || '').trim()
         const storedOtp = String(shopOrder.deliveryOtp || '').trim()
 
-        console.log(`[OTP_VERIFY] Comparison: Input='${inputOtp}' (len:${inputOtp.length}), Stored='${storedOtp}' (len:${storedOtp.length}), Status=${shopOrder.status}`);
+        console.log(`[OTP_VERIFY] Comparison: Status=${shopOrder.status}`);
 
         if (!storedOtp) {
-            console.log(`[OTP_VERIFY] No OTP stored for ShopOrder ${shopOrderId}. Current fields: deliveryOtp=${shopOrder.deliveryOtp}, otpExpires=${shopOrder.otpExpires}`);
+            console.log(`[OTP_VERIFY] No OTP stored for ShopOrder ${shopOrderId}.`);
             return res.status(400).json({ message: "No OTP has been generated for this order yet. Ask customer to generate one." })
         }
 
+        // Check retry limit (max 3 attempts)
+        const MAX_ATTEMPTS = 3
+        if (shopOrder.otpAttempts >= MAX_ATTEMPTS) {
+            console.log(`[OTP_VERIFY] Max attempts reached for Order ${orderId}`);
+            return res.status(403).json({ 
+                message: "Maximum OTP attempts reached. Please ask the customer to generate a new OTP." 
+            })
+        }
+
         if (storedOtp !== inputOtp) {
-            console.log(`[OTP_VERIFY] Mismatch for Order ${orderId}: Expected '${storedOtp}', Got '${inputOtp}'`);
-            return res.status(400).json({ message: `Invalid OTP. Please enter the correct 4-digit OTP sent to the customer. (Expected: ${storedOtp}, Got: ${inputOtp})` })
+            // Increment attempts
+            shopOrder.otpAttempts = (shopOrder.otpAttempts || 0) + 1
+            order.markModified('shopOrders')
+            await order.save()
+
+            const remaining = MAX_ATTEMPTS - shopOrder.otpAttempts
+            console.log(`[OTP_VERIFY] Mismatch for Order ${orderId}. Attempts: ${shopOrder.otpAttempts}`);
+            
+            return res.status(400).json({ 
+                message: remaining > 0 
+                    ? `Invalid OTP. Please try again. (${remaining} attempts remaining)`
+                    : "Invalid OTP. Maximum attempts reached. Please ask the customer to generate a new OTP."
+            })
         }
         
         // Add a 10-minute buffer (600,000 ms) to account for clock drift
@@ -1068,11 +1105,11 @@ export const verifyDeliveryOtp = async (req, res) => {
         const expirationTime = new Date(shopOrder.otpExpires);
         const bufferTime = 10 * 60 * 1000; 
 
-        console.log(`[OTP_VERIFY] Time Check: Current=${now.toISOString()}, Expires=${expirationTime.toISOString()}, BufferApplied=${new Date(expirationTime.getTime() + bufferTime).toISOString()}`);
+        console.log(`[OTP_VERIFY] Time Check: Current=${now.toISOString()}, Expires=${expirationTime.toISOString()}`);
 
         if (!shopOrder.otpExpires || (expirationTime.getTime() + bufferTime) < now.getTime()) {
-            console.log(`[OTP_VERIFY] Expired: ${shopOrder.otpExpires} (Server Time: ${now.toISOString()})`);
-            return res.status(400).json({ message: `OTP has expired (Expired at: ${expirationTime.toLocaleString()}). Please ask the customer to generate a new one.` })
+            console.log(`[OTP_VERIFY] Expired: ${shopOrder.otpExpires}`);
+            return res.status(400).json({ message: "OTP has expired. Please ask the customer to generate a new one." })
         }
 
         shopOrder.status = "delivered"
@@ -1081,6 +1118,7 @@ export const verifyDeliveryOtp = async (req, res) => {
         shopOrder.deliveryOtp = null
         shopOrder.otpExpires = null
         shopOrder.lastOtpGeneratedAt = null
+        shopOrder.otpAttempts = 0 // Reset attempts on success (though fields are cleared)
         
         // Explicitly mark as modified
         order.markModified('shopOrders')
@@ -1417,6 +1455,7 @@ export const autoRegenerateOtps = async () => {
                     shopOrder.deliveryOtp = otp
                     shopOrder.otpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
                     shopOrder.lastOtpGeneratedAt = new Date()
+                    shopOrder.otpAttempts = 0 // Reset attempts when new OTP is generated
                     
                     // Send OTP email
                     await sendDeliveryOtpMail(order.user, otp)

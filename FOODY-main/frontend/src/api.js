@@ -251,7 +251,7 @@ export const orderAPI = {
 
   updateSpecialInstructions: (orderId, instructions) =>
     api.put(`/api/order/update-special-instructions/${orderId}`, {
-      instructions,
+      specialInstructions: instructions,
     }),
 };
 

@@ -23,5 +23,10 @@ itemRouter.get("/test-delete/:itemId", isAuth, (req, res) => {
 itemRouter.get("/get-by-city/:city",getItemsInCity)
 itemRouter.get("/get-by-shop/:shopId",getItemsByShop)
 itemRouter.get("/search-items",searchItems)
-itemRouter.get("/offers/:city",getOfferItems)
+itemRouter.get("/offers/:city", isAuth, (req, res, next) => {
+    if (req.user.role === "deliveryBoy") {
+        return res.status(403).json({ message: "Access denied. Delivery boys cannot view offers." });
+    }
+    next();
+}, getOfferItems)
 export default itemRouter

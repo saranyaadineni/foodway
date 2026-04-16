@@ -7,7 +7,12 @@ import { acceptOrder, cancelOrder, deleteOrder, getCurrentOrder, getCurrentOrder
 
 const orderRouter=express.Router()
 
-orderRouter.post("/place-order",isAuth,placeOrder)
+orderRouter.post("/place-order", isAuth, (req, res, next) => {
+    if (req.user.role !== "user") {
+        return res.status(403).json({ message: "Access denied. Only customers can place orders." });
+    }
+    next();
+}, placeOrder)
 orderRouter.post("/verify-payment",isAuth,verifyPayment)
 orderRouter.get("/my-orders",isAuth,getMyOrders)
 orderRouter.get("/get-assignments",isAuth,getDeliveryBoyAssignment)

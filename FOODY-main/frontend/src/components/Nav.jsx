@@ -362,14 +362,16 @@ function Nav() {
         {isHelpPage ? (
           <>
             <div className="hidden lg:flex items-center gap-8">
-              <div 
-                className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group"
-                onClick={() => navigate("/offers")}
-              >
-                <HiOutlineReceiptPercent size={22} />
-                <span>Offers</span>
-                <span className="absolute -top-2 -right-4 bg-[#fc8019] text-white text-[9px] px-1 rounded font-bold">NEW</span>
-              </div>
+              {userData?.role !== "deliveryBoy" && (
+                <div 
+                  className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group"
+                  onClick={() => navigate("/offers")}
+                >
+                  <HiOutlineReceiptPercent size={22} />
+                  <span>Offers</span>
+                  <span className="absolute -top-2 -right-4 bg-[#fc8019] text-white text-[9px] px-1 rounded font-bold">NEW</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-[#fc8019] cursor-pointer font-medium transition-colors">
                 <FiHelpCircle size={20} />
                 <span>Help</span>
@@ -387,7 +389,7 @@ function Nav() {
               </div>
             )}
 
-            {(isLoggedIn || location.pathname === "/search") && (
+            {(isLoggedIn || location.pathname === "/search") && userData?.role === "user" && (
                 <div 
                   className="flex items-center gap-2 text-gray-700 hover:text-[#fc8019] cursor-pointer font-medium transition-colors relative group"
                   onClick={() => navigate("/cart")}
@@ -407,7 +409,7 @@ function Nav() {
 
           {/* Mobile Help Page Items */}
             <div className="flex lg:hidden items-center gap-4">
-              {(isLoggedIn || location.pathname === "/search") && (
+              {(isLoggedIn || location.pathname === "/search") && userData?.role === "user" && (
                 <div
                   className="relative cursor-pointer"
                   onClick={() => navigate("/cart")}

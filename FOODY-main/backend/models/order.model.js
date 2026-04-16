@@ -88,6 +88,10 @@ lastOtpGeneratedAt:{
         type:Date,
         default:null
     },
+otpAttempts:{
+    type:Number,
+    default:0
+},
  deliveredAt:{
     type:Date,
     default:null

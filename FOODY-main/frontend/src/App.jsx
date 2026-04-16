@@ -49,8 +49,14 @@ const PageLoader = () => (
 
 // 🔐 Protected Route Wrapper
 const ProtectedRoute = ({ user, loading, children }) => {
+  const location = useLocation();
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/signin" replace />;
+
+  // Specific protection for /checkout route
+  if (location.pathname === "/checkout" && user.role !== "user") {
+    return <Navigate to="/" replace />; // Redirect non-customers from checkout
+  }
   return children;
 };
 

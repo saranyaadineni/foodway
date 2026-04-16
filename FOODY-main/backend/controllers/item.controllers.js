@@ -65,7 +65,7 @@ export const addItem = async (req, res) => {
             options: { sort: { updatedAt: -1 } },
             populate: {
                 path: "shop",
-                select: "name image isOpen"
+                select: "name image isOpen address city"
             }
         })
         return res.status(201).json(shopUpdate)
@@ -134,7 +134,7 @@ export const editItem = async (req, res) => {
             options: { sort: { updatedAt: -1 } },
             populate: {
                 path: "shop",
-                select: "name image isOpen"
+                select: "name image isOpen address city"
             }
         })
         return res.status(200).json(shop)
@@ -147,7 +147,7 @@ export const editItem = async (req, res) => {
 export const getItemById = async (req, res) => {
     try {
         const itemId = req.params.itemId
-        const item = await Item.findById(itemId).populate("shop", "name image isOpen")
+        const item = await Item.findById(itemId).populate("shop", "name image isOpen address city")
         if (!item) {
             return res.status(400).json({ message: "item not found" })
         }
@@ -177,7 +177,7 @@ export const deleteItem = async (req, res) => {
             options: { sort: { updatedAt: -1 } },
             populate: {
                 path: "shop",
-                select: "name image isOpen"
+                select: "name image isOpen address city"
             }
         })
         return res.status(200).json(shop)
@@ -277,7 +277,7 @@ export const getItemsInCity = async (req, res) => {
         const items = await Item.find(filterQuery)
             .populate({
                 path: "shop", 
-                select: "name image isOpen"
+                select: "name image isOpen address city"
             })
             .sort(sortQuery)
         
@@ -297,7 +297,7 @@ export const getItemsByShop=async (req,res) => {
             path: "items",
             populate: {
                 path: "shop",
-                select: "name image isOpen"
+                select: "name image isOpen address city"
             }
         })
         if(!shop){
@@ -340,7 +340,7 @@ export const searchItems=async (req,res) => {
             ...searchFilter
         }).populate({
             path: "shop",
-            select: "name image isOpen"
+            select: "name image isOpen address city"
         })
 
         return res.status(200).json(items)

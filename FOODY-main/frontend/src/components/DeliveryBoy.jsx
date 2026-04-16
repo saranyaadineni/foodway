@@ -26,7 +26,23 @@ function DeliveryBoy() {
   const [isActive, setIsActive] = useState(userData?.isActive || false)
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 })
   const [upiByKey, setUpiByKey] = useState({})
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)
+
+  const showMessage = (message, type = 'success') => {
+    if (type === 'success') {
+      setSuccess(message);
+      setError('');
+    } else {
+      setError(message);
+      setSuccess('');
+    }
+    setTimeout(() => {
+      setSuccess('');
+      setError('');
+    }, 3000);
+  };
 
   // Fetch assignments
   const getAssignments = useCallback(async () => {
@@ -213,6 +229,20 @@ function DeliveryBoy() {
   return (
     <div className="w-screen min-h-screen flex flex-col items-center bg-[#f8fafc] overflow-y-auto">
       <Nav />
+      
+      {/* Message Notifications */}
+      <div className="fixed top-24 right-4 z-50 flex flex-col gap-2">
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-xl shadow-2xl animate-bounce-short">
+            <p className="font-bold flex items-center gap-2">✅ {success}</p>
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl shadow-2xl animate-shake">
+            <p className="font-bold flex items-center gap-2">❌ {error}</p>
+          </div>
+        )}
+      </div>
 
       <div className="w-full max-w-5xl flex flex-col items-center gap-6 p-4">
 
@@ -524,7 +554,7 @@ function DeliveryBoy() {
                           onClick={async () => {
                             const otp = (otpValues[key] || '').trim()
                             if (!otp || otp.length !== 4) {
-                              alert('Please enter a valid 4-digit OTP')
+                              showMessage('Please enter a valid 4-digit OTP', 'error')
                               return
                             }
                             setLoading(true)
@@ -534,6 +564,7 @@ function DeliveryBoy() {
                                 co.shopOrder._id,
                                 otp
                               )
+                              showMessage('Delivery Verified!', 'success')
                               setMessages(prev => ({ ...prev, [key]: 'Delivery Verified!' }))
                               setTimeout(() => {
                                 getCurrentOrders()
@@ -541,7 +572,8 @@ function DeliveryBoy() {
                                 handleDeliveryCounts()
                               }, 1500)
                             } catch (err) {
-                              alert(err.response?.data?.message || 'Invalid OTP')
+                              const msg = err.response?.data?.message || 'Invalid OTP'
+                              showMessage(msg, 'error')
                             } finally {
                               setLoading(false)
                             }
